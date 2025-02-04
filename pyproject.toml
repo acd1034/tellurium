@@ -9,20 +9,16 @@
 [tool.poetry]
 authors = ["acd1034 <48613285+acd1034@users.noreply.github.com>"]
 description = ""
-name = "sample"
+name = "tellurium"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-ipykernel = "^6.23.1"
-ipympl = "^0.9.4"
 matplotlib = "^3.5.2"
-numpy = "^1.22.4"
-pandas = "^1.4.2"
+numpy = "^2.0.0"
 pytest = "^8.0.2"
 python = "^3.12"
 pyyaml = "^6.0.1"
 rich = "^13.7.1"
-scipy = "^1.8.1"
 types-pyyaml = "^6.0.12.20240917"
 
 [tool.poetry.group.dev.dependencies]
