@@ -3,7 +3,7 @@ import typing as _ty
 from argparse import ArgumentParser
 from pathlib import Path
 
-import yaml
+import yaml as _yaml
 
 __all__ = [
     "obj_to_dataclass",
@@ -59,28 +59,42 @@ def _get_field_default(field: _dc.Field) -> _ty.Any:
     return dataclass_to_obj(field.type)
 
 
+class _YAMLDumper(_yaml.SafeDumper):
+    pass
+
+
+class _BlockScalarStr(str):
+    pass
+
+
+def _block_scalar_representer(dumper, data):
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+
+
+_yaml.add_representer(_BlockScalarStr, _block_scalar_representer, Dumper=_YAMLDumper)
+
+
 def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
     if _dc.is_dataclass(cls):
         return {f.name: _get_field_default(f) for f in _dc.fields(cls)}
 
     if _is_optional(cls):
-        if nested_types := _ty.get_args(cls):
-            return dataclass_to_obj(nested_types[0])
-        else:
-            return f"{cls}"
+        return dataclass_to_obj(_ty.get_args(cls)[0])
 
     if _ty.get_origin(cls) is _ty.Union:
-        assert (nested_types := _ty.get_args(cls))
-        return {
-            "alternative": nested_types[0].__name__,
-            "arguments": dataclass_to_obj(nested_types[0]),
-        }
+        alternatives = []
+        for alternative in _ty.get_args(cls):
+            obj = {
+                "alternative": alternative.__name__,
+                "arguments": dataclass_to_obj(alternative),
+            }
+            alternatives.append(obj)
+        return _BlockScalarStr(_yaml.safe_dump(alternatives))
 
     if _ty.get_origin(cls) is list:
-        if nested_types := _ty.get_args(cls):
-            return [dataclass_to_obj(nested_types[0])]
-        else:
-            return ["<_ty.Any>"]
+        return [dataclass_to_obj(_ty.get_args(cls)[0])]
+    if cls is list:
+        return [f"{_ty.Any}"]
 
     # その他の型の場合
     return f"{cls}"
@@ -89,7 +103,9 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
 def emit_yaml_example(cls: type[_ty.Any], filepath: Path):
     yaml_dict = dataclass_to_obj(cls)
     with open(filepath, "w") as f:
-        yaml.safe_dump(yaml_dict, f, default_flow_style=False, sort_keys=False)
+        _yaml.dump(
+            yaml_dict, f, Dumper=_YAMLDumper, default_flow_style=False, sort_keys=False
+        )
 
 
 def make_from_arguments(cls: type[_T]) -> _T:
@@ -103,6 +119,6 @@ def make_from_arguments(cls: type[_T]) -> _T:
         quit()
 
     with open(args.config) as f:
-        data = yaml.safe_load(f)
+        data = _yaml.safe_load(f)
 
     return obj_to_dataclass(cls, data)

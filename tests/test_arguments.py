@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from textwrap import dedent
 from typing import Optional, Union
 
 from tellurium.arguments import dataclass_to_obj, obj_to_dataclass
@@ -19,8 +20,16 @@ class Main:
 def test_dataclass_to_obj():
     actual = dataclass_to_obj(Main)
     expected = {
-        "print": {"msg": "<class 'str'>"},
-        "secret": {"alternative": "Print", "arguments": {"msg": "<class 'str'>"}},
+        "print": {
+            "msg": "<class 'str'>",
+        },
+        "secret": dedent("""
+            - alternative: Print
+              arguments:
+                msg: <class 'str'>
+            - alternative: int
+              arguments: <class 'int'>
+            """).lstrip("\n"),
         "number": None,
     }
     assert actual == expected, str(actual)
