@@ -1,0 +1,67 @@
+# Install dependencies listed in pyproject.toml
+# $ poetry install
+# Update all dependencies to the latest versions
+# $ poetry update
+# Add a new package as a dependency to your project
+# $ poetry add <package>
+# Remove a package
+# $ poetry remove <package>
+[tool.poetry]
+authors = ["acd1034 <48613285+acd1034@users.noreply.github.com>"]
+description = ""
+name = "sample"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+ipykernel = "^6.23.1"
+ipympl = "^0.9.4"
+matplotlib = "^3.5.2"
+numpy = "^1.22.4"
+pandas = "^1.4.2"
+pytest = "^8.0.2"
+python = "^3.12"
+pyyaml = "^6.0.1"
+rich = "^13.7.1"
+scipy = "^1.8.1"
+types-pyyaml = "^6.0.12.20240917"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.3"
+mypy = "^1.13.0"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
+[tool.ruff]
+# 1行の最大文字数 (default: 88)
+line-length = 88
+
+[tool.ruff.lint]
+# チェックするエラーの種類
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+# 除外するエラーの種類
+ignore = [
+    "E203", # whitespace before ':'
+    "E501", # line too long
+    "F503", # line break before binary operator
+]
+
+# ファイルごとのエラー除外
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+# isort の設定
+# [tool.ruff.lint.isort]
+# known-third-party = ["fastapi", "pydantic", "starlette"]
+
+[tool.mypy]
+disallow_untyped_defs = true
