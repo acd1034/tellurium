@@ -14,6 +14,7 @@ __all__ = [
     "make_from_arguments",
 ]
 _T = _ty.TypeVar("_T")
+_LIST_STR_FUNCTIONS = [ty for ty in _ty.get_args(_fun.FunListStr) if ty != list[str]]
 
 
 def _is_optional(cls: type[_ty.Any]):
@@ -52,6 +53,12 @@ class _ObjToDataclass:
 
             if isinstance(union, _fun.FileStem) and str in _ty.get_args(cls):
                 return self.filepath.stem
+
+            # TODO: list, list[Union[str, ...]] に対応する
+            if any(isinstance(union, fun) for fun in _LIST_STR_FUNCTIONS) and (
+                list[str] in _ty.get_args(cls)
+            ):
+                return union.run()
 
             return union
 

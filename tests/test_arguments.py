@@ -4,7 +4,7 @@ from textwrap import dedent
 from typing import Optional, Union
 
 from tellurium.arguments import dataclass_to_obj, obj_to_dataclass
-from tellurium.functional import FunStr
+from tellurium.functional import FunListStr, FunStr
 
 
 @dataclass
@@ -96,3 +96,14 @@ def test_obj_to_dataclass_file_stem():
     }
     data = obj_to_dataclass(FunStr, obj, Path(__file__))
     assert data == "test_arguments", str(data)
+
+
+def test_obj_to_dataclass_fun_wildcard():
+    obj = {
+        "ALT": "FunWildcard",
+        "ARGS": {
+            "pattern": "*.toml",
+        },
+    }
+    data = obj_to_dataclass(FunListStr, obj)
+    assert data == ["pyproject.toml"], str(data)
