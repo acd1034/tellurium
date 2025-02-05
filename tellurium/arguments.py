@@ -23,7 +23,7 @@ def _is_optional(cls: type[_ty.Any]):
 
 
 @_dc.dataclass
-class ObjToDataclass:
+class _ObjToDataclass:
     filepath: _ty.Optional[Path]
 
     def run(self, cls: type[_T], data) -> _T:
@@ -53,7 +53,7 @@ class ObjToDataclass:
 
 
 def obj_to_dataclass(cls: type[_T], data, filepath: _ty.Optional[Path] = None) -> _T:
-    return ObjToDataclass(filepath).run(cls, data)
+    return _ObjToDataclass(filepath).run(cls, data)
 
 
 def _get_field_default(field: _dc.Field) -> _ty.Any:
@@ -97,7 +97,7 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
                 "ARGS": dataclass_to_obj(alternative),
             }
             alternatives.append(obj)
-        return _BlockScalarStr(_yaml.safe_dump(alternatives))
+        return _BlockScalarStr(_yaml.dump(alternatives, Dumper=_YAMLDumper))
 
     if _ty.get_origin(cls) is list:
         return [dataclass_to_obj(_ty.get_args(cls)[0])]
@@ -109,10 +109,10 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
 
 
 def emit_yaml_example(cls: type[_ty.Any], filepath: Path):
-    yaml_dict = dataclass_to_obj(cls)
+    yaml_obj = dataclass_to_obj(cls)
     with open(filepath, "w") as f:
         _yaml.dump(
-            yaml_dict, f, Dumper=_YAMLDumper, default_flow_style=False, sort_keys=False
+            yaml_obj, f, Dumper=_YAMLDumper, default_flow_style=False, sort_keys=False
         )
 
 

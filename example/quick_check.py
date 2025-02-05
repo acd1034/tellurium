@@ -6,23 +6,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from tellurium.arguments import make_from_arguments
+from tellurium.functional import FunStr
 
 
 @dataclass
 class Print:
-    msg: str
+    msg: FunStr
 
     def run(self):
         print(self.msg)
 
 
 @dataclass
-class Main:
+class Plot:
     input: Path
     output: Path
     print: Print
-    secret: Union[Print, int]
-    number: Optional[float] = None
+    print_or_int: Union[Print, int]
+    opt_float: Optional[float]
+    list_int: list[int]
+    list_only: list
+    opt_float_with_default: Optional[float] = None
 
     @staticmethod
     def load_dat(input_file: Path) -> np.ndarray:
@@ -38,11 +42,7 @@ class Main:
         return np.genfromtxt(lines[non_comment_idx:])
 
     def run(self):
-        self.print.run()
-        print(f"{self.secret=}")
-        print(f"{self.number=}")
-
-        data = Main.load_dat(self.input)
+        data = Plot.load_dat(self.input)
         assert data.shape[1] > 0, f"{data.shape=}"
 
         # data の内容を描画
@@ -65,4 +65,4 @@ class Main:
 
 
 if __name__ == "__main__":
-    make_from_arguments(Main).run()
+    make_from_arguments(Plot).run()
