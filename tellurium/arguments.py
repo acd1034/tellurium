@@ -22,30 +22,38 @@ def _is_optional(cls: type[_ty.Any]):
     )
 
 
-def obj_to_dataclass(cls: type[_T], data) -> _T:
-    if _dc.is_dataclass(cls):
-        assert isinstance(data, dict), f"{type(data)=}"
-        field_types = {f.name: f.type for f in _dc.fields(cls)}
-        return cls(**{k: obj_to_dataclass(field_types[k], v) for k, v in data.items()})
+@_dc.dataclass
+class ObjToDataclass:
+    filepath: _ty.Optional[Path]
 
-    if _is_optional(cls):
-        if data is not None:
-            return obj_to_dataclass(_ty.get_args(cls)[0], data)
-        else:
-            return None
+    def run(self, cls: type[_T], data) -> _T:
+        if _dc.is_dataclass(cls):
+            assert isinstance(data, dict), f"{type(data)=}"
+            field_types = {f.name: f.type for f in _dc.fields(cls)}
+            return cls(**{k: self.run(field_types[k], v) for k, v in data.items()})
 
-    if _ty.get_origin(cls) is _ty.Union:
-        assert isinstance(data, dict), f"{type(data)=}"
-        for alternative in _ty.get_args(cls):
-            if alternative.__name__ == data["ALT"]:
-                return obj_to_dataclass(alternative, data["ARGS"])
-        raise RuntimeError(f'{data["ALT"]=} should be {cls=}')
+        if _is_optional(cls):
+            if data is not None:
+                return self.run(_ty.get_args(cls)[0], data)
+            else:
+                return None
 
-    if _ty.get_origin(cls) is list:
-        assert isinstance(data, list), f"{type(data)=}"
-        return [obj_to_dataclass(_ty.get_args(cls)[0], item) for item in data]
+        if _ty.get_origin(cls) is _ty.Union:
+            assert isinstance(data, dict), f"{type(data)=}"
+            for alternative in _ty.get_args(cls):
+                if alternative.__name__ == data["ALT"]:
+                    return self.run(alternative, data["ARGS"])
+            raise RuntimeError(f'{data["ALT"]=} should be {cls=}')
 
-    return cls(data)
+        if _ty.get_origin(cls) is list:
+            assert isinstance(data, list), f"{type(data)=}"
+            return [self.run(_ty.get_args(cls)[0], item) for item in data]
+
+        return cls(data)
+
+
+def obj_to_dataclass(cls: type[_T], data, filepath: _ty.Optional[Path] = None) -> _T:
+    return ObjToDataclass(filepath).run(cls, data)
 
 
 def _get_field_default(field: _dc.Field) -> _ty.Any:
@@ -121,4 +129,4 @@ def make_from_arguments(cls: type[_T]) -> _T:
     with open(args.config) as f:
         data = _yaml.safe_load(f)
 
-    return obj_to_dataclass(cls, data)
+    return obj_to_dataclass(cls, data, filepath=args.config)
