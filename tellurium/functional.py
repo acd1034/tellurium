@@ -2,14 +2,14 @@ import dataclasses as _dc
 import typing as _ty
 
 __all__ = [
-    "FunBasename",
+    "FileStem",
     "FunStr",
 ]
 
 
 @_dc.dataclass
-class FunBasename:
+class FileStem:
     pass
 
 
-FunStr = _ty.Union[str, FunBasename]
+FunStr = _ty.Union[str, FileStem]

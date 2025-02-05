@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml as _yaml
 
+from . import functional as _fun
+
 __all__ = [
     "obj_to_dataclass",
     "dataclass_to_obj",
@@ -26,6 +28,12 @@ def _is_optional(cls: type[_ty.Any]):
 class _ObjToDataclass:
     filepath: _ty.Optional[Path]
 
+    def get_union(self, cls: type[_T], data) -> _T:
+        for alternative in _ty.get_args(cls):
+            if alternative.__name__ == data["ALT"]:
+                return self.run(alternative, data.get("ARGS", {}))
+        raise RuntimeError(f'{data["ALT"]=} should be {cls=}')
+
     def run(self, cls: type[_T], data) -> _T:
         if _dc.is_dataclass(cls):
             assert isinstance(data, dict), f"{type(data)=}"
@@ -40,10 +48,12 @@ class _ObjToDataclass:
 
         if _ty.get_origin(cls) is _ty.Union:
             assert isinstance(data, dict), f"{type(data)=}"
-            for alternative in _ty.get_args(cls):
-                if alternative.__name__ == data["ALT"]:
-                    return self.run(alternative, data.get("ARGS", {}))
-            raise RuntimeError(f'{data["ALT"]=} should be {cls=}')
+            union = self.get_union(cls, data)
+
+            if isinstance(union, _fun.FileStem) and str in _ty.get_args(cls):
+                return self.filepath.stem
+
+            return union
 
         if _ty.get_origin(cls) is list:
             assert isinstance(data, list), f"{type(data)=}"

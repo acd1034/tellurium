@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from pathlib import Path
 from textwrap import dedent
 from typing import Optional, Union
 
 from tellurium.arguments import dataclass_to_obj, obj_to_dataclass
+from tellurium.functional import FunStr
 
 
 @dataclass
@@ -84,5 +86,13 @@ def test_obj_to_dataclass_alt_without_args():
     obj = {
         "ALT": "Empty",
     }
-    empty = obj_to_dataclass(Union[Empty, str], obj)
-    assert empty == Empty()
+    data = obj_to_dataclass(Union[Empty, str], obj)
+    assert data == Empty(), str(data)
+
+
+def test_obj_to_dataclass_file_stem():
+    obj = {
+        "ALT": "FileStem",
+    }
+    data = obj_to_dataclass(FunStr, obj, Path(__file__))
+    assert data == "test_arguments", str(data)
