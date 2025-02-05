@@ -18,21 +18,17 @@ class Main:
 
 
 def test_dataclass_to_obj():
-    actual = dataclass_to_obj(Main)
-    expected = {
-        "print": {
-            "msg": "<class 'str'>",
-        },
-        "secret": dedent("""
-            - alternative: Print
-              arguments:
-                msg: <class 'str'>
-            - alternative: int
-              arguments: <class 'int'>
-            """).lstrip("\n"),
-        "number": None,
-    }
-    assert actual == expected, str(actual)
+    obj = dataclass_to_obj(Main)
+    # assert obj == {}, str(obj)
+    assert obj["print"]["msg"] == "<class 'str'>"
+    assert obj["secret"] == dedent("""
+        - ALT: Print
+          ARGS:
+            msg: <class 'str'>
+        - ALT: int
+          ARGS: <class 'int'>
+        """).lstrip("\n")
+    assert obj["number"] is None
 
 
 def test_obj_to_dataclass():
@@ -41,8 +37,8 @@ def test_obj_to_dataclass():
             "msg": "Hello world!",
         },
         "secret": {
-            "alternative": "int",
-            "arguments": 42,
+            "ALT": "int",
+            "ARGS": 42,
         },
     }
     main = obj_to_dataclass(Main, obj)
@@ -57,8 +53,8 @@ def test_obj_to_dataclass2():
             "msg": "Hello world!",
         },
         "secret": {
-            "alternative": "Print",
-            "arguments": {
+            "ALT": "Print",
+            "ARGS": {
                 "msg": 42,
             },
         },

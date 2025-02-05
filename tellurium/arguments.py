@@ -37,9 +37,9 @@ def obj_to_dataclass(cls: type[_T], data) -> _T:
     if _ty.get_origin(cls) is _ty.Union:
         assert isinstance(data, dict), f"{type(data)=}"
         for alternative in _ty.get_args(cls):
-            if alternative.__name__ == data["alternative"]:
-                return obj_to_dataclass(alternative, data["arguments"])
-        raise RuntimeError(f"{data['alternative']=} should be {cls=}")
+            if alternative.__name__ == data["ALT"]:
+                return obj_to_dataclass(alternative, data["ARGS"])
+        raise RuntimeError(f'{data["ALT"]=} should be {cls=}')
 
     if _ty.get_origin(cls) is list:
         assert isinstance(data, list), f"{type(data)=}"
@@ -85,8 +85,8 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
         alternatives = []
         for alternative in _ty.get_args(cls):
             obj = {
-                "alternative": alternative.__name__,
-                "arguments": dataclass_to_obj(alternative),
+                "ALT": alternative.__name__,
+                "ARGS": dataclass_to_obj(alternative),
             }
             alternatives.append(obj)
         return _BlockScalarStr(_yaml.safe_dump(alternatives))
