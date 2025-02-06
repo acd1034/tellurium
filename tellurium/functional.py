@@ -23,7 +23,22 @@ class FileStem:
     pass
 
 
-StrFunction = _ty.Union[FileName, FileStem]
+@_dc.dataclass
+class FunPatSubst:
+    pattern: str
+    replacement: str
+    texts: _ty.Union[str, list[str]]
+
+    def run(self) -> _ty.Union[str, list[str]]:
+        pattern = re.compile(f'^{self.pattern.replace("%", "(.*)")}$')
+        repl = self.replacement.replace("%", r"\1")
+        if isinstance(self.texts, str):
+            pattern.sub(repl, self.texts)
+        else:
+            return [pattern.sub(repl, text) for text in self.texts]
+
+
+StrFunction = _ty.Union[FileName, FileStem, FunPatSubst]
 
 
 def _path_to_str(path: Path) -> str:
@@ -39,20 +54,6 @@ class FunWildcard:
 
     def run(self) -> list[str]:
         return [_path_to_str(path) for path in Path(".").glob(self.pattern)]
-
-
-@_dc.dataclass
-class FunPatSubst:
-    pattern: str
-    replacement: str
-    texts: list[str]
-
-    def run(self) -> list[str]:
-        pattern = f'^{self.pattern.replace("%", "(.*)")}$'
-        return [
-            re.sub(pattern, self.replacement.replace("%", r"\1"), text)
-            for text in self.texts
-        ]
 
 
 ListStrFunction = _ty.Union[FunWildcard, FunPatSubst]

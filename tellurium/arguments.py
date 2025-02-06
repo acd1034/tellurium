@@ -24,6 +24,34 @@ def _is_optional(cls: type[_ty.Any]):
     )
 
 
+def isinstance_generic(obj, typ) -> bool:
+    if isinstance(typ, type):
+        return isinstance(obj, typ)
+
+    origin = _ty.get_origin(typ)
+    args = _ty.get_args(typ)
+
+    if origin is None:
+        return False
+
+    if not isinstance(obj, origin):
+        return False
+
+    if args:
+        if origin is list:
+            return all(isinstance(x, args[0]) for x in obj)
+        elif origin is dict:
+            return all(
+                isinstance(k, args[0]) and isinstance(v, args[1])
+                for k, v in obj.items()
+            )
+        elif origin is tuple:
+            if len(args) == 2 and args[1] is ...:
+                return all(isinstance(x, args[0]) for x in obj)
+            elif len(args) == len(obj):
+                return all(isinstance(x, t) for x, t in zip(obj, args))
+
+
 @_dc.dataclass
 class _ObjToDataclass:
     filepath: _ty.Optional[Path]
@@ -56,7 +84,7 @@ class _ObjToDataclass:
         if _ty.get_origin(cls) is _ty.Union:
             if isinstance(data, dict) and "ALT" in data:
                 return self.get_union(cls, data, key=key)
-            elif type(data) in _ty.get_args(cls):
+            elif any(isinstance_generic(data, ty) for ty in _ty.get_args(cls)):
                 return data
             else:
                 raise RuntimeError(f'{key}={data} should contain "ALT" or be {cls}')
@@ -81,6 +109,8 @@ class _ObjToDataclass:
                         return self.filepath.name
                     case _fun.FileStem():
                         return self.filepath.stem
+                    case _fun.FunPatSubst():
+                        return union.run()
                     case _:
                         _ty.assert_never(union)
             # [[fallthrough]]

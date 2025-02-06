@@ -133,6 +133,8 @@ def test_obj_to_dataclass_fun_pat_subst():
     data = obj_to_dataclass(list[str], obj)
     assert data == ["foo.o", "bar.o", "baz.o"], str(data)
 
+
+def test_obj_to_dataclass_pat_subst_with_wildcard():
     obj = {
         "ALT": "FunPatSubst",
         "ARGS": {
@@ -148,3 +150,11 @@ def test_obj_to_dataclass_fun_pat_subst():
     }
     data = obj_to_dataclass(list[str], obj)
     assert data == ["pyproject.yaml"], str(data)
+
+
+def test_obj_to_dataclass_function_in_union():
+    obj = {
+        "ALT": "FileStem",
+    }
+    data = obj_to_dataclass(Union[str, int], obj, filepath=Path(__file__))
+    assert data == "test_arguments", str(data)
