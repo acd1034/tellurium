@@ -33,7 +33,7 @@ class _ObjToDataclass:
         for alternative in _ty.get_args(cls):
             if alternative.__name__ == data["ALT"]:
                 return self.run(alternative, data.get("ARGS", {}))
-        raise RuntimeError(f'{data["ALT"]=} should be {cls=}')
+        raise RuntimeError(f'{data["ALT"]=} should be {cls}')
 
     def run(self, cls: type[_T], data) -> _T:
         if _dc.is_dataclass(cls):
@@ -48,8 +48,12 @@ class _ObjToDataclass:
                 return None
 
         if _ty.get_origin(cls) is _ty.Union:
-            assert isinstance(data, dict), f"{type(data)=}"
-            union = self.get_union(cls, data)
+            if isinstance(data, dict) and "ALT" in data:
+                union = self.get_union(cls, data)
+            elif type(data) in _ty.get_args(cls):
+                union = data
+            else:
+                raise RuntimeError(f'{data=} should be {cls} or contain "ALT"')
 
             if isinstance(union, _fun.FileStem) and str in _ty.get_args(cls):
                 return self.filepath.stem

@@ -98,6 +98,19 @@ def test_obj_to_dataclass_file_stem():
     assert data == "test_arguments", str(data)
 
 
+def test_obj_to_dataclass_union_without_alt():
+    obj = {
+        "ALT": "int",
+        "ARGS": 42,
+    }
+    data = obj_to_dataclass(Union[int, str], obj)
+    assert data == 42, str(data)
+
+    obj = 42
+    data = obj_to_dataclass(Union[int, str], obj)
+    assert data == 42, str(data)
+
+
 def test_obj_to_dataclass_fun_wildcard():
     obj = {
         "ALT": "FunWildcard",
