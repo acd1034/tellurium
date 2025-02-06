@@ -15,6 +15,9 @@ __all__ = [
 ]
 _T = _ty.TypeVar("_T")
 _LIST_STR_FUNCTIONS = [ty for ty in _ty.get_args(_fun.FunListStr) if ty != list[str]]
+_SPECIAL_FUNCTIONS = _LIST_STR_FUNCTIONS + [
+    ty for ty in _ty.get_args(_fun.FunStr) if ty is not str
+]
 
 
 def _is_optional(cls: type[_ty.Any]):
@@ -104,6 +107,10 @@ _yaml.add_representer(_BlockScalarStr, _block_scalar_representer, Dumper=_YAMLDu
 
 
 def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
+    if _ty.get_origin(cls) is _ty.Union:
+        type_args = [ty for ty in _ty.get_args(cls) if ty not in _SPECIAL_FUNCTIONS]
+        cls = _ty.Union[*type_args]
+
     if _dc.is_dataclass(cls):
         return {f.name: _get_field_default(f) for f in _dc.fields(cls)}
 

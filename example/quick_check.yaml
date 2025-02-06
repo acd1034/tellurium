@@ -1,15 +1,11 @@
 print:
   msg:
     ALT: FileStem
-print_or_int:
-  ALT: int
-  ARGS: 42
+print_or_int: 42
 opt_float: 3.14
 list_int:
   - 43
 fun_list_str:
   ALT: FunWildcard
   ARGS:
-    pattern:
-      ALT: str
-      ARGS: "*.yml"
+    pattern: "*.yml"
