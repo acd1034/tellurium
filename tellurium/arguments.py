@@ -54,7 +54,7 @@ class _ObjToDataclass:
             if isinstance(union, _fun.FileStem) and str in _ty.get_args(cls):
                 return self.filepath.stem
 
-            # TODO: list, list[Union[str, ...]] に対応する
+            # TODO: list[Union[str, ...]] に対応する
             if any(isinstance(union, fun) for fun in _LIST_STR_FUNCTIONS) and (
                 list[str] in _ty.get_args(cls)
             ):
@@ -119,8 +119,6 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
 
     if _ty.get_origin(cls) is list:
         return [dataclass_to_obj(_ty.get_args(cls)[0])]
-    if cls is list:
-        return [f"{_ty.Any}"]
 
     # その他の型の場合
     return f"{cls}"

@@ -19,7 +19,6 @@ class Main:
     print_or_int: Union[Print, int]
     opt_float: Optional[float]
     list_int: list[int]
-    list_only: list
     fun_list_str: FunListStr
     opt_float_with_default: Optional[float] = None
 

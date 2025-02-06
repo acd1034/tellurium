@@ -7,8 +7,6 @@ print_or_int:
 opt_float: 3.14
 list_int:
   - 43
-list_only:
-  - Any
 fun_list_str:
   ALT: FunWildcard
   ARGS:
