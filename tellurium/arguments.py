@@ -32,31 +32,38 @@ def _is_optional(cls: type[_ty.Any]):
 class _ObjToDataclass:
     filepath: _ty.Optional[Path]
 
-    def get_union(self, cls: type[_T], data) -> _T:
+    def get_union(self, cls: type[_T], data, key: str) -> _T:
         for alternative in _ty.get_args(cls):
             if alternative.__name__ == data["ALT"]:
-                return self.run(alternative, data.get("ARGS", {}))
-        raise RuntimeError(f'{data["ALT"]=} should be {cls}')
+                new_key = f"{key}.ARGS"
+                return self.run(alternative, data.get("ARGS", {}), key=new_key)
+        raise RuntimeError(f'{key}.ALT={data["ALT"]} should be {cls}')
 
-    def run(self, cls: type[_T], data) -> _T:
+    def run(self, cls: type[_T], data, key: str = "OBJ") -> _T:
         if _dc.is_dataclass(cls):
-            assert isinstance(data, dict), f"{type(data)=}"
+            if not isinstance(data, dict):
+                raise RuntimeError(f"{key}={data} should be dict")
             field_types = {f.name: f.type for f in _dc.fields(cls)}
-            return cls(**{k: self.run(field_types[k], v) for k, v in data.items()})
+            cls_args = {
+                k: self.run(field_types[k], v, key=f"{key}.{k}")
+                for k, v in data.items()
+            }
+            return cls(**cls_args)
 
         if _is_optional(cls):
             if data is not None:
-                return self.run(_ty.get_args(cls)[0], data)
+                new_key = f"{key}.Optional"
+                return self.run(_ty.get_args(cls)[0], data, key=new_key)
             else:
                 return None
 
         if _ty.get_origin(cls) is _ty.Union:
             if isinstance(data, dict) and "ALT" in data:
-                union = self.get_union(cls, data)
+                union = self.get_union(cls, data, key=key)
             elif type(data) in _ty.get_args(cls):
                 union = data
             else:
-                raise RuntimeError(f'{data=} should be {cls} or contain "ALT"')
+                raise RuntimeError(f'{key}={data} should contain "ALT" or be {cls}')
 
             if isinstance(union, _fun.FileStem) and str in _ty.get_args(cls):
                 return self.filepath.stem
@@ -70,7 +77,8 @@ class _ObjToDataclass:
             return union
 
         if _ty.get_origin(cls) is list:
-            assert isinstance(data, list), f"{type(data)=}"
+            if not isinstance(data, list):
+                raise RuntimeError(f"{key}={data} should be list")
             return [self.run(_ty.get_args(cls)[0], item) for item in data]
 
         return cls(data)
