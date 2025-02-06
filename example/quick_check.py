@@ -2,12 +2,11 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 from tellurium.arguments import make_from_arguments
-from tellurium.functional import FunListStr, FunStr
 
 
 @dataclass
 class Print:
-    msg: FunStr
+    msg: str
 
     def run(self):
         print(self.msg)
@@ -19,7 +18,7 @@ class Main:
     print_or_int: Union[Print, int]
     opt_float: Optional[float]
     list_int: list[int]
-    fun_list_str: FunListStr
+    fun_list_str: list[str]
     opt_float_with_default: Optional[float] = None
 
     def run(self):

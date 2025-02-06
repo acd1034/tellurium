@@ -14,10 +14,6 @@ __all__ = [
     "make_from_arguments",
 ]
 _T = _ty.TypeVar("_T")
-_LIST_STR_FUNCTIONS = [ty for ty in _ty.get_args(_fun.FunListStr) if ty != list[str]]
-_SPECIAL_FUNCTIONS = _LIST_STR_FUNCTIONS + [
-    ty for ty in _ty.get_args(_fun.FunStr) if ty is not str
-]
 
 
 def _is_optional(cls: type[_ty.Any]):
@@ -59,27 +55,35 @@ class _ObjToDataclass:
 
         if _ty.get_origin(cls) is _ty.Union:
             if isinstance(data, dict) and "ALT" in data:
-                union = self.get_union(cls, data, key=key)
+                return self.get_union(cls, data, key=key)
             elif type(data) in _ty.get_args(cls):
-                union = data
+                return data
             else:
                 raise RuntimeError(f'{key}={data} should contain "ALT" or be {cls}')
 
-            if isinstance(union, _fun.FileStem) and str in _ty.get_args(cls):
-                return self.filepath.stem
-
-            # TODO: list[Union[str, ...]] に対応する
-            if any(isinstance(union, fun) for fun in _LIST_STR_FUNCTIONS) and (
-                list[str] in _ty.get_args(cls)
-            ):
+        # TODO: list[Union[str, ...]] に対応する
+        if cls == list[str]:
+            if isinstance(data, dict) and "ALT" in data:
+                union = self.get_union(_fun.ListStrFunction, data, key=key)
                 return union.run()
-
-            return union
+            # [[fallthrough]]
 
         if _ty.get_origin(cls) is list:
             if not isinstance(data, list):
                 raise RuntimeError(f"{key}={data} should be list")
             return [self.run(_ty.get_args(cls)[0], item) for item in data]
+
+        if cls is str:
+            if isinstance(data, dict) and "ALT" in data:
+                union = self.get_union(_fun.StrFunction, data, key=key)
+                match union:
+                    case _fun.FileName():
+                        return self.filepath.name
+                    case _fun.FileStem():
+                        return self.filepath.stem
+                    case _:
+                        _ty.assert_never(union)
+            # [[fallthrough]]
 
         return cls(data)
 
@@ -115,10 +119,6 @@ _yaml.add_representer(_BlockScalarStr, _block_scalar_representer, Dumper=_YAMLDu
 
 
 def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
-    if _ty.get_origin(cls) is _ty.Union:
-        type_args = [ty for ty in _ty.get_args(cls) if ty not in _SPECIAL_FUNCTIONS]
-        cls = _ty.Union[*type_args]
-
     if _dc.is_dataclass(cls):
         return {f.name: _get_field_default(f) for f in _dc.fields(cls)}
 

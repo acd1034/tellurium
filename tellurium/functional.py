@@ -1,13 +1,21 @@
 import dataclasses as _dc
+import re
 import typing as _ty
 from pathlib import Path
 
 __all__ = [
+    "FileName",
     "FileStem",
-    "FunStr",
+    "StrFunction",
     "FunWildcard",
-    "FunListStr",
+    "FunPatSubst",
+    "ListStrFunction",
 ]
+
+
+@_dc.dataclass
+class FileName:
+    pass
 
 
 @_dc.dataclass
@@ -15,7 +23,7 @@ class FileStem:
     pass
 
 
-FunStr = _ty.Union[str, FileStem]
+StrFunction = _ty.Union[FileName, FileStem]
 
 
 def _path_to_str(path: Path) -> str:
@@ -27,11 +35,24 @@ def _path_to_str(path: Path) -> str:
 
 @_dc.dataclass
 class FunWildcard:
-    pattern: FunStr
+    pattern: str
 
     def run(self) -> list[str]:
         return [_path_to_str(path) for path in Path(".").glob(self.pattern)]
 
 
-# TODO: list[str] を list[FunStr] に置き換える
-FunListStr = _ty.Union[list[str], FunWildcard]
+@_dc.dataclass
+class FunPatSubst:
+    pattern: str
+    replacement: str
+    texts: list[str]
+
+    def run(self) -> list[str]:
+        pattern = f'^{self.pattern.replace("%", "(.*)")}$'
+        return [
+            re.sub(pattern, self.replacement.replace("%", r"\1"), text)
+            for text in self.texts
+        ]
+
+
+ListStrFunction = _ty.Union[FunWildcard, FunPatSubst]

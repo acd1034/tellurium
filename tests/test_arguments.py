@@ -4,7 +4,6 @@ from textwrap import dedent
 from typing import Optional, Union
 
 from tellurium.arguments import dataclass_to_obj, obj_to_dataclass
-from tellurium.functional import FunListStr, FunStr
 
 
 @dataclass
@@ -94,7 +93,7 @@ def test_obj_to_dataclass_file_stem():
     obj = {
         "ALT": "FileStem",
     }
-    data = obj_to_dataclass(FunStr, obj, Path(__file__))
+    data = obj_to_dataclass(str, obj, Path(__file__))
     assert data == "test_arguments", str(data)
 
 
@@ -118,5 +117,34 @@ def test_obj_to_dataclass_fun_wildcard():
             "pattern": "*.toml",
         },
     }
-    data = obj_to_dataclass(FunListStr, obj)
+    data = obj_to_dataclass(list[str], obj)
     assert data == ["pyproject.toml"], str(data)
+
+
+def test_obj_to_dataclass_fun_pat_subst():
+    obj = {
+        "ALT": "FunPatSubst",
+        "ARGS": {
+            "pattern": "%.c",
+            "replacement": "%.o",
+            "texts": ["foo.c", "bar.c", "baz.c"],
+        },
+    }
+    data = obj_to_dataclass(list[str], obj)
+    assert data == ["foo.o", "bar.o", "baz.o"], str(data)
+
+    obj = {
+        "ALT": "FunPatSubst",
+        "ARGS": {
+            "pattern": "%.toml",
+            "replacement": "%.yaml",
+            "texts": {
+                "ALT": "FunWildcard",
+                "ARGS": {
+                    "pattern": "*.toml",
+                },
+            },
+        },
+    }
+    data = obj_to_dataclass(list[str], obj)
+    assert data == ["pyproject.yaml"], str(data)
