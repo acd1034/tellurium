@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import pytest
 
@@ -62,6 +62,21 @@ def test_obj_to_dataclass():
     assert main.print.msg == "Hello world!"
     assert main.secret == 42
     assert main.number is None
+
+
+def test_obj_to_dataclass_dict():
+    obj = {
+        "print": {
+            "msg": "Goodbye",
+        },
+        "msg": "Hello world!",
+        "secret": 42,
+    }
+    data = obj_to_dataclass(dict, obj)
+    assert isinstance(data["print"], dict)
+    assert data["print"]["msg"] == "Goodbye"
+    assert data["msg"] == "Hello world!"
+    assert data["secret"] == 42
 
 
 def test_obj_to_dataclass_dataclass_for_alt():
@@ -195,3 +210,10 @@ def test_obj_to_dataclass_check_loc_in_error():
     }
     with pytest.raises(RuntimeError, match=r"test_arguments\.py:int_or_float.*"):
         obj_to_dataclass(X, obj, filepath=Path(__file__))
+
+
+def test_obj_to_dataclass_any():
+    obj = 3.14
+    data = obj_to_dataclass(Any, obj)
+    assert isinstance(data, float), str(data)
+    assert data == 3.14, str(data)

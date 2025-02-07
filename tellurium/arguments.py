@@ -146,6 +146,9 @@ class _ObjToDataclass:
                 raise self.run_time_error("expected to be list", data, key)
             return [self.run(_ty.get_args(cls)[0], item) for item in data]
 
+        if cls is _ty.Any:
+            return data
+
         return cls(data)
 
 
