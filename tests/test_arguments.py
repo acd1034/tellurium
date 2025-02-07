@@ -89,6 +89,22 @@ def test_obj_to_dataclass_alt_without_args():
     assert data == Empty(), str(data)
 
 
+def test_obj_to_dataclass_file_path():
+    obj = {
+        "FUNC": "FilePath",
+    }
+    data = obj_to_dataclass(str, obj, Path(__file__))
+    assert data.endswith("test_arguments.py"), str(data)
+
+
+def test_obj_to_dataclass_file_name():
+    obj = {
+        "FUNC": "FileName",
+    }
+    data = obj_to_dataclass(str, obj, Path(__file__))
+    assert data == "test_arguments.py", str(data)
+
+
 def test_obj_to_dataclass_file_stem():
     obj = {
         "FUNC": "FileStem",
@@ -110,7 +126,7 @@ def test_obj_to_dataclass_union_without_alt():
     assert data == 42, str(data)
 
 
-def test_obj_to_dataclass_fun_wildcard():
+def test_obj_to_dataclass_wildcard():
     obj = {
         "FUNC": "Wildcard",
         "ARGS": {
@@ -121,7 +137,7 @@ def test_obj_to_dataclass_fun_wildcard():
     assert data == ["pyproject.toml"], str(data)
 
 
-def test_obj_to_dataclass_fun_pat_subst():
+def test_obj_to_dataclass_pat_subst():
     obj = {
         "FUNC": "PatSubst",
         "ARGS": {

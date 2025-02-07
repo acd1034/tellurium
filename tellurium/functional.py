@@ -4,12 +4,18 @@ import typing as _ty
 from pathlib import Path
 
 __all__ = [
+    "FilePath",
     "FileName",
     "FileStem",
     "PatSubst",
     "Wildcard",
     "BuiltinFunction",
 ]
+
+
+@_dc.dataclass
+class FilePath:
+    pass
 
 
 @_dc.dataclass
@@ -52,4 +58,4 @@ class Wildcard:
         return [_path_to_str(path) for path in Path(".").glob(self.pattern)]
 
 
-BuiltinFunction = _ty.Union[FileName, FileStem, PatSubst, Wildcard]
+BuiltinFunction = _ty.Union[FilePath, FileName, FileStem, PatSubst, Wildcard]

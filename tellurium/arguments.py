@@ -78,6 +78,8 @@ class _ObjToDataclass:
             func = self.get_builtin_function(data, key=key)
 
             match func:
+                case _func.FilePath():
+                    result = str(self.filepath)
                 case _func.FileName():
                     result = self.filepath.name
                 case _func.FileStem():
