@@ -107,14 +107,6 @@ def test_obj_to_dataclass_file_name():
     assert data == "test_arguments.py", str(data)
 
 
-def test_obj_to_dataclass_file_stem():
-    obj = {
-        "FUNC": "FileStem",
-    }
-    data = obj_to_dataclass(str, obj, Path(__file__))
-    assert data == "test_arguments", str(data)
-
-
 def test_obj_to_dataclass_union_without_alt():
     obj = {
         "ALT": "int",
@@ -187,10 +179,10 @@ def test_obj_to_dataclass_pat_subst_with_wildcard():
 
 def test_obj_to_dataclass_function_in_union():
     obj = {
-        "FUNC": "FileStem",
+        "FUNC": "FileName",
     }
     data = obj_to_dataclass(Union[str, int], obj, filepath=Path(__file__))
-    assert data == "test_arguments", str(data)
+    assert data == "test_arguments.py", str(data)
 
 
 def test_obj_to_dataclass_check_loc_in_error():

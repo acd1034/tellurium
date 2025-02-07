@@ -6,7 +6,6 @@ from pathlib import Path
 __all__ = [
     "FilePath",
     "FileName",
-    "FileStem",
     "PatSubst",
     "Wildcard",
     "BuiltinFunction",
@@ -20,11 +19,6 @@ class FilePath:
 
 @_dc.dataclass
 class FileName:
-    pass
-
-
-@_dc.dataclass
-class FileStem:
     pass
 
 
@@ -58,4 +52,4 @@ class Wildcard:
         return [_path_to_str(path) for path in Path(".").glob(self.pattern)]
 
 
-BuiltinFunction = _ty.Union[FilePath, FileName, FileStem, PatSubst, Wildcard]
+BuiltinFunction = _ty.Union[FilePath, FileName, PatSubst, Wildcard]

@@ -106,8 +106,6 @@ class _ObjToDataclass:
                     result = str(self.filepath) if self.filepath else "<unknown>"
                 case _func.FileName():
                     result = self.filepath.name if self.filepath else "<unknown>"
-                case _func.FileStem():
-                    result = self.filepath.stem if self.filepath else "<unknown>"
                 case _:
                     result = func.run()
 
