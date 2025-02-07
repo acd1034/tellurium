@@ -3,6 +3,8 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Optional, Union
 
+import pytest
+
 from tellurium.arguments import dataclass_to_obj, obj_to_dataclass
 
 
@@ -189,3 +191,15 @@ def test_obj_to_dataclass_function_in_union():
     }
     data = obj_to_dataclass(Union[str, int], obj, filepath=Path(__file__))
     assert data == "test_arguments", str(data)
+
+
+def test_obj_to_dataclass_check_loc_in_error():
+    @dataclass
+    class X:
+        int_or_float: Union[int, float]
+
+    obj = {
+        "int_or_float": "raw string",
+    }
+    with pytest.raises(RuntimeError, match=r"test_arguments\.py:int_or_float.*"):
+        obj_to_dataclass(X, obj, filepath=Path(__file__))

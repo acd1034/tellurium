@@ -55,56 +55,80 @@ def _isinstance_generic(obj, typ) -> bool:
                 return all(_isinstance_generic(x, t) for x, t in zip(obj, args))
 
 
+def _concat_keys(left: _ty.Optional[str], right: str) -> str:
+    if left:
+        return f"{left}.{right}"
+    else:
+        return right
+
+
 @_dc.dataclass
 class _ObjToDataclass:
     filepath: _ty.Optional[Path]
 
-    def get_union(self, cls: type[_T], data, key: str) -> _T:
+    def run_time_error(self, msg: str, data, key: _ty.Optional[str]) -> RuntimeError:
+        filename = str(self.filepath.name) if self.filepath else "<unknown>"
+        if key is not None:
+            line = f"{filename}:{key}: {msg}"
+        else:
+            line = f"{filename}: {msg}"
+
+        actual = repr(data)
+        if len(actual) > 80:
+            line2 = f"actual: {actual[:80]}..."
+        else:
+            line2 = f"actual: {actual}"
+
+        return RuntimeError(f"{line}\n{line2}")
+
+    def get_union(self, cls: type[_T], data, key: _ty.Optional[str]) -> _T:
         for alternative in _ty.get_args(cls):
             if alternative.__name__ == data["ALT"]:
-                new_key = f"{key}.ARGS"
+                new_key = _concat_keys(key, "ARGS")
                 return self.run(alternative, data.get("ARGS", {}), key=new_key)
-        raise RuntimeError(f'{key}.ALT={data["ALT"]} should be {cls}')
+        raise self.run_time_error(f"expected to be {cls}", data, key)
 
-    def get_builtin_function(self, data, key: str) -> _func.BuiltinFunction:
+    def get_builtin_function(
+        self, data, key: _ty.Optional[str]
+    ) -> _func.BuiltinFunction:
         for alternative in _ty.get_args(_func.BuiltinFunction):
             if data["FUNC"] == alternative.__name__:
-                new_key = f"{key}.ARGS"
+                new_key = _concat_keys(key, "ARGS")
                 return self.run(alternative, data.get("ARGS", {}), key=new_key)
-        raise RuntimeError(f'Unknown function: {key}.ALT={data["ALT"]}')
+        raise self.run_time_error("expected to be a built-in function", data, key)
 
-    def run(self, cls: type[_T], data, key: str = "OBJ") -> _T:
+    def run(self, cls: type[_T], data, key: _ty.Optional[str] = None) -> _T:
         if isinstance(data, dict) and "FUNC" in data:
             func = self.get_builtin_function(data, key=key)
 
             match func:
                 case _func.FilePath():
-                    result = str(self.filepath)
+                    result = str(self.filepath) if self.filepath else "<unknown>"
                 case _func.FileName():
-                    result = self.filepath.name
+                    result = self.filepath.name if self.filepath else "<unknown>"
                 case _func.FileStem():
-                    result = self.filepath.stem
+                    result = self.filepath.stem if self.filepath else "<unknown>"
                 case _:
                     result = func.run()
 
             if not _isinstance_generic(result, cls):
-                raise RuntimeError(f"{key}={result} should be {cls}")
+                raise self.run_time_error(f"expected to be {cls}", data, key)
 
             return result
 
         if _dc.is_dataclass(cls):
             if not isinstance(data, dict):
-                raise RuntimeError(f"{key}={data} should be dict")
+                raise self.run_time_error("expected to be dict", data, key)
             field_types = {f.name: f.type for f in _dc.fields(cls)}
             cls_args = {
-                k: self.run(field_types[k], v, key=f"{key}.{k}")
+                k: self.run(field_types[k], v, key=_concat_keys(key, k))
                 for k, v in data.items()
             }
             return cls(**cls_args)
 
         if _is_optional(cls):
             if data is not None:
-                new_key = f"{key}.Optional"
+                new_key = _concat_keys(key, "Optional")
                 return self.run(_ty.get_args(cls)[0], data, key=new_key)
             else:
                 return None
@@ -115,11 +139,13 @@ class _ObjToDataclass:
             elif any(_isinstance_generic(data, ty) for ty in _ty.get_args(cls)):
                 return data
             else:
-                raise RuntimeError(f'{key}={data} should contain "ALT" or be {cls}')
+                raise self.run_time_error(
+                    f'expected to contain "ALT" or be {cls}', data, key
+                )
 
         if _ty.get_origin(cls) is list:
             if not isinstance(data, list):
-                raise RuntimeError(f"{key}={data} should be list")
+                raise self.run_time_error("expected to be list", data, key)
             return [self.run(_ty.get_args(cls)[0], item) for item in data]
 
         return cls(data)
