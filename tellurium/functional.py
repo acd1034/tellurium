@@ -8,6 +8,8 @@ __all__ = [
     "FileName",
     "PatSubst",
     "Wildcard",
+    "Matrix",
+    "Placeholder",
     "BuiltinFunction",
 ]
 
@@ -52,4 +54,14 @@ class Wildcard:
         return [_path_to_str(path) for path in Path(".").glob(self.pattern)]
 
 
-BuiltinFunction = _ty.Union[FilePath, FileName, PatSubst, Wildcard]
+@_dc.dataclass
+class Matrix:
+    pass
+
+
+@_dc.dataclass
+class Placeholder:
+    key: str
+
+
+BuiltinFunction = _ty.Union[FilePath, FileName, PatSubst, Wildcard, Matrix, Placeholder]

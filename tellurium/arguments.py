@@ -1,4 +1,5 @@
 import dataclasses as _dc
+import itertools as _it
 import typing as _ty
 from argparse import ArgumentParser
 from pathlib import Path
@@ -8,6 +9,7 @@ import yaml as _yaml
 from . import functional as _func
 
 __all__ = [
+    "isinstance_generic",
     "obj_to_dataclass",
     "dataclass_to_obj",
     "emit_yaml_example",
@@ -24,7 +26,10 @@ def _is_optional(cls: type[_ty.Any]):
     )
 
 
-def _isinstance_generic(obj, typ) -> bool:
+def isinstance_generic(obj, typ) -> bool:
+    if typ is _ty.Any:
+        return True
+
     if isinstance(typ, type):
         return isinstance(obj, typ)
 
@@ -35,24 +40,24 @@ def _isinstance_generic(obj, typ) -> bool:
         return False
 
     if origin is _ty.Union:
-        return any(_isinstance_generic(obj, arg) for arg in args)
+        return any(isinstance_generic(obj, arg) for arg in args)
 
     if not isinstance(obj, origin):
         return False
 
     if args:
         if origin is list:
-            return all(_isinstance_generic(x, args[0]) for x in obj)
+            return all(isinstance_generic(x, args[0]) for x in obj)
         elif origin is dict:
             return all(
-                _isinstance_generic(k, args[0]) and _isinstance_generic(v, args[1])
+                isinstance_generic(k, args[0]) and isinstance_generic(v, args[1])
                 for k, v in obj.items()
             )
         elif origin is tuple:
             if len(args) == 2 and args[1] is ...:
-                return all(_isinstance_generic(x, args[0]) for x in obj)
+                return all(isinstance_generic(x, args[0]) for x in obj)
             elif len(args) == len(obj):
-                return all(_isinstance_generic(x, t) for x, t in zip(obj, args))
+                return all(isinstance_generic(x, t) for x, t in zip(obj, args))
 
 
 def _concat_keys(left: _ty.Optional[str], right: str) -> str:
@@ -60,6 +65,13 @@ def _concat_keys(left: _ty.Optional[str], right: str) -> str:
         return f"{left}.{right}"
     else:
         return right
+
+
+def _product_mapping(mapping: dict[str, list]) -> list[dict]:
+    keys = mapping.keys()
+    values = mapping.values()
+    product = list(_it.product(*values))
+    return [dict(zip(keys, combination)) for combination in product]
 
 
 @_dc.dataclass
@@ -75,42 +87,98 @@ class _ObjToDataclass:
 
         actual = repr(data)
         if len(actual) > 80:
-            line2 = f"actual: {actual[:80]}..."
+            line2 = f"actual: {actual[:77]}..."
         else:
             line2 = f"actual: {actual}"
 
         return RuntimeError(f"{line}\n{line2}")
 
-    def get_union(self, cls: type[_T], data, key: _ty.Optional[str]) -> _T:
+    def dict_get(self, data: dict, keyword: str, key: _ty.Optional[str]):
+        if isinstance(data, dict) and keyword in data:
+            return data[keyword]
+        else:
+            raise self.run_time_error(f"expected to contain {keyword!r}", data, key)
+
+    def get_union(
+        self, cls: type[_T], data, key: _ty.Optional[str], mapping: dict
+    ) -> _T:
         for alternative in _ty.get_args(cls):
             if alternative.__name__ == data["ALT"]:
                 new_key = _concat_keys(key, "ARGS")
-                return self.run(alternative, data.get("ARGS", {}), key=new_key)
+                return self.run(
+                    alternative, data.get("ARGS", {}), key=new_key, mapping=mapping
+                )
         raise self.run_time_error(f"expected to be {cls}", data, key)
 
     def get_builtin_function(
-        self, data, key: _ty.Optional[str]
+        self, data, key: _ty.Optional[str], mapping: dict
     ) -> _func.BuiltinFunction:
         for alternative in _ty.get_args(_func.BuiltinFunction):
             if data["FUNC"] == alternative.__name__:
                 new_key = _concat_keys(key, "ARGS")
-                return self.run(alternative, data.get("ARGS", {}), key=new_key)
+                return self.run(
+                    alternative, data.get("ARGS", {}), key=new_key, mapping=mapping
+                )
         raise self.run_time_error("expected to be a built-in function", data, key)
 
-    def run(self, cls: type[_T], data, key: _ty.Optional[str] = None) -> _T:
+    def run(
+        self,
+        cls: type[_T],
+        data,
+        key: _ty.Optional[str] = None,
+        mapping: _ty.Optional[dict] = None,
+    ) -> _T:
+        if mapping is None:
+            mapping = {}
+
         if isinstance(data, dict) and "FUNC" in data:
-            func = self.get_builtin_function(data, key=key)
+            if data["FUNC"] == "Matrix":
+                if _ty.get_origin(cls) is not list:
+                    raise self.run_time_error(f"expected to be {cls}", data, key)
+
+                matrix_args = self.dict_get(data, "ARGS", key=key)
+                args_key = _concat_keys(key, "ARGS")
+
+                matrix_mapping = self.dict_get(matrix_args, "mapping", key=args_key)
+                mapping_key = _concat_keys(args_key, "mapping")
+                intermediate_mapping = self.run(
+                    dict[str, list],
+                    matrix_mapping,
+                    key=mapping_key,
+                    mapping=mapping,
+                )
+                mappings = _product_mapping(intermediate_mapping)
+
+                matrix_template = self.dict_get(matrix_args, "template", key=args_key)
+                template_key = _concat_keys(args_key, "template")
+                return [
+                    self.run(
+                        _ty.get_args(cls)[0],
+                        matrix_template,
+                        key=template_key,
+                        mapping=mapping | new_items,
+                    )
+                    for new_items in mappings
+                ]
+
+            func = self.get_builtin_function(data, key=key, mapping=mapping)
 
             match func:
                 case _func.FilePath():
                     result = str(self.filepath) if self.filepath else "<unknown>"
                 case _func.FileName():
                     result = self.filepath.name if self.filepath else "<unknown>"
+                case _func.Placeholder():
+                    if func.key not in mapping:
+                        raise self.run_time_error(
+                            f"Matrix.mapping should contain {func.key!r}", mapping, key
+                        )
+                    result = mapping[func.key]
                 case _:
                     result = func.run()
 
-            if not _isinstance_generic(result, cls):
-                raise self.run_time_error(f"expected to be {cls}", data, key)
+            if not isinstance_generic(result, cls):
+                raise self.run_time_error(f"expected to be {cls}", result, key)
 
             return result
 
@@ -119,7 +187,9 @@ class _ObjToDataclass:
                 raise self.run_time_error("expected to be dict", data, key)
             field_types = {f.name: f.type for f in _dc.fields(cls)}
             cls_args = {
-                k: self.run(field_types[k], v, key=_concat_keys(key, k))
+                k: self.run(
+                    field_types[k], v, key=_concat_keys(key, k), mapping=mapping
+                )
                 for k, v in data.items()
             }
             return cls(**cls_args)
@@ -127,24 +197,30 @@ class _ObjToDataclass:
         if _is_optional(cls):
             if data is not None:
                 new_key = _concat_keys(key, "Optional")
-                return self.run(_ty.get_args(cls)[0], data, key=new_key)
+                return self.run(
+                    _ty.get_args(cls)[0], data, key=new_key, mapping=mapping
+                )
             else:
                 return None
 
         if _ty.get_origin(cls) is _ty.Union:
             if isinstance(data, dict) and "ALT" in data:
-                return self.get_union(cls, data, key=key)
-            elif any(_isinstance_generic(data, ty) for ty in _ty.get_args(cls)):
+                return self.get_union(cls, data, key=key, mapping=mapping)
+            elif any(isinstance_generic(data, ty) for ty in _ty.get_args(cls)):
                 return data
             else:
                 raise self.run_time_error(
-                    f'expected to contain "ALT" or be {cls}', data, key
+                    f"expected to contain {"ALT"!r} or be {cls}", data, key
                 )
 
         if _ty.get_origin(cls) is list:
             if not isinstance(data, list):
                 raise self.run_time_error("expected to be list", data, key)
-            return [self.run(_ty.get_args(cls)[0], item) for item in data]
+            new_key = _concat_keys(key, "list")
+            return [
+                self.run(_ty.get_args(cls)[0], item, key=new_key, mapping=mapping)
+                for item in data
+            ]
 
         if cls is _ty.Any:
             return data

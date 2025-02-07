@@ -5,7 +5,7 @@ from typing import Any, Optional, Union
 
 import pytest
 
-from tellurium.arguments import dataclass_to_obj, obj_to_dataclass
+from tellurium.arguments import dataclass_to_obj, isinstance_generic, obj_to_dataclass
 
 
 @dataclass
@@ -217,3 +217,85 @@ def test_obj_to_dataclass_any():
     data = obj_to_dataclass(Any, obj)
     assert isinstance(data, float), str(data)
     assert data == 3.14, str(data)
+
+
+def placeholder(key: str) -> dict:
+    return {
+        "FUNC": "Placeholder",
+        "ARGS": {
+            "key": key,
+        },
+    }
+
+
+def test_obj_to_dataclass_matrix():
+    obj = {
+        "FUNC": "Matrix",
+        "ARGS": {
+            "mapping": {
+                "number": [0, 1, 2, 3],
+            },
+            "template": placeholder("number"),
+        },
+    }
+    data = obj_to_dataclass(list[int], obj)
+    assert isinstance_generic(data, list[int]), str(data)
+    assert data == [0, 1, 2, 3], str(data)
+
+
+def test_obj_to_dataclass_matrix_dataclass_template():
+    @dataclass
+    class X:
+        msg: str
+        number: int
+
+    obj = {
+        "FUNC": "Matrix",
+        "ARGS": {
+            "mapping": {
+                "number": [0, 1, 2, 3],
+            },
+            "template": {
+                "msg": "Hello",
+                "number": placeholder("number"),
+            },
+        },
+    }
+    data = obj_to_dataclass(cls=list[X], data=obj)
+    assert isinstance_generic(data, list[X]), str(data)
+    assert all(item.msg == "Hello" for item in data), str(data)
+    for i, item in enumerate(data):
+        assert item.number == i
+
+
+@pytest.mark.xfail()
+def test_obj_to_dataclass_function_in_dict():
+    obj = {
+        "msg": {
+            "FUNC": "FileName",
+        },
+    }
+    data = obj_to_dataclass(cls=dict, data=obj, filepath=Path(__file__))
+    assert isinstance(data, dict), str(data)
+    assert data["msg"] == "test_arguments.py", str(data["msg"])
+
+
+@pytest.mark.xfail()
+def test_obj_to_dataclass_matrix_dict_template():
+    obj = {
+        "FUNC": "Matrix",
+        "ARGS": {
+            "mapping": {
+                "number": [0, 1, 2, 3],
+            },
+            "template": {
+                "msg": "Hello",
+                "number": placeholder("number"),
+            },
+        },
+    }
+    data = obj_to_dataclass(cls=list[dict], data=obj)
+    assert isinstance_generic(data, list[dict]), str(data)
+    assert all(item["msg"] == "Hello" for item in data), str(data)
+    for i, item in enumerate(data):
+        assert item["number"] == i
