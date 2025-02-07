@@ -112,7 +112,7 @@ def test_obj_to_dataclass_union_without_alt():
 
 def test_obj_to_dataclass_fun_wildcard():
     obj = {
-        "FUNC": "FunWildcard",
+        "FUNC": "Wildcard",
         "ARGS": {
             "pattern": "*.toml",
         },
@@ -123,7 +123,7 @@ def test_obj_to_dataclass_fun_wildcard():
 
 def test_obj_to_dataclass_fun_pat_subst():
     obj = {
-        "FUNC": "FunPatSubst",
+        "FUNC": "PatSubst",
         "ARGS": {
             "pattern": "%.c",
             "replacement": "%.o",
@@ -136,12 +136,12 @@ def test_obj_to_dataclass_fun_pat_subst():
 
 def test_obj_to_dataclass_pat_subst_with_wildcard():
     obj = {
-        "FUNC": "FunPatSubst",
+        "FUNC": "PatSubst",
         "ARGS": {
             "pattern": "%.toml",
             "replacement": "%.yaml",
             "texts": {
-                "FUNC": "FunWildcard",
+                "FUNC": "Wildcard",
                 "ARGS": {
                     "pattern": "*.toml",
                 },

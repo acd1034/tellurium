@@ -6,6 +6,6 @@ opt_float: 3.14
 list_int:
   - 43
 fun_list_str:
-  FUNC: FunWildcard
+  FUNC: Wildcard
   ARGS:
     pattern: "*.yml"
