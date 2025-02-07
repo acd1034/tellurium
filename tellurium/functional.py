@@ -38,7 +38,7 @@ class PatSubst:
         pattern = re.compile(f'^{self.pattern.replace("%", "(.*)")}$')
         repl = self.replacement.replace("%", r"\1")
         if isinstance(self.texts, str):
-            pattern.sub(repl, self.texts)
+            return pattern.sub(repl, self.texts)
         else:
             return [pattern.sub(repl, text) for text in self.texts]
 

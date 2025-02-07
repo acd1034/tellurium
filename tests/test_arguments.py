@@ -150,6 +150,21 @@ def test_obj_to_dataclass_pat_subst():
     assert data == ["foo.o", "bar.o", "baz.o"], str(data)
 
 
+def test_obj_to_dataclass_pat_subst_str():
+    obj = {
+        "FUNC": "PatSubst",
+        "ARGS": {
+            "pattern": "%.py",
+            "replacement": "%_copy.py",
+            "texts": {
+                "FUNC": "FilePath",
+            },
+        },
+    }
+    data = obj_to_dataclass(str, obj, Path(__file__))
+    assert data.endswith("test_arguments_copy.py"), str(data)
+
+
 def test_obj_to_dataclass_pat_subst_with_wildcard():
     obj = {
         "FUNC": "PatSubst",
