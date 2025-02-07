@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml as _yaml
 
-from . import functional as _fun
+from . import functional as _func
 
 __all__ = [
     "obj_to_dataclass",
@@ -24,7 +24,7 @@ def _is_optional(cls: type[_ty.Any]):
     )
 
 
-def isinstance_generic(obj, typ) -> bool:
+def _isinstance_generic(obj, typ) -> bool:
     if isinstance(typ, type):
         return isinstance(obj, typ)
 
@@ -34,22 +34,25 @@ def isinstance_generic(obj, typ) -> bool:
     if origin is None:
         return False
 
+    if origin is _ty.Union:
+        return any(_isinstance_generic(obj, arg) for arg in args)
+
     if not isinstance(obj, origin):
         return False
 
     if args:
         if origin is list:
-            return all(isinstance(x, args[0]) for x in obj)
+            return all(_isinstance_generic(x, args[0]) for x in obj)
         elif origin is dict:
             return all(
-                isinstance(k, args[0]) and isinstance(v, args[1])
+                _isinstance_generic(k, args[0]) and _isinstance_generic(v, args[1])
                 for k, v in obj.items()
             )
         elif origin is tuple:
             if len(args) == 2 and args[1] is ...:
-                return all(isinstance(x, args[0]) for x in obj)
+                return all(_isinstance_generic(x, args[0]) for x in obj)
             elif len(args) == len(obj):
-                return all(isinstance(x, t) for x, t in zip(obj, args))
+                return all(_isinstance_generic(x, t) for x, t in zip(obj, args))
 
 
 @_dc.dataclass
@@ -63,7 +66,30 @@ class _ObjToDataclass:
                 return self.run(alternative, data.get("ARGS", {}), key=new_key)
         raise RuntimeError(f'{key}.ALT={data["ALT"]} should be {cls}')
 
+    def get_builtin_function(self, data, key: str) -> _func.BuiltinFunction:
+        for alternative in _ty.get_args(_func.BuiltinFunction):
+            if data["FUNC"] == alternative.__name__:
+                new_key = f"{key}.ARGS"
+                return self.run(alternative, data.get("ARGS", {}), key=new_key)
+        raise RuntimeError(f'Unknown function: {key}.ALT={data["ALT"]}')
+
     def run(self, cls: type[_T], data, key: str = "OBJ") -> _T:
+        if isinstance(data, dict) and "FUNC" in data:
+            func = self.get_builtin_function(data, key=key)
+
+            match func:
+                case _func.FileName():
+                    result = self.filepath.name
+                case _func.FileStem():
+                    result = self.filepath.stem
+                case _:
+                    result = func.run()
+
+            if not _isinstance_generic(result, cls):
+                raise RuntimeError(f"{key}={result} should be {cls}")
+
+            return result
+
         if _dc.is_dataclass(cls):
             if not isinstance(data, dict):
                 raise RuntimeError(f"{key}={data} should be dict")
@@ -84,36 +110,15 @@ class _ObjToDataclass:
         if _ty.get_origin(cls) is _ty.Union:
             if isinstance(data, dict) and "ALT" in data:
                 return self.get_union(cls, data, key=key)
-            elif any(isinstance_generic(data, ty) for ty in _ty.get_args(cls)):
+            elif any(_isinstance_generic(data, ty) for ty in _ty.get_args(cls)):
                 return data
             else:
                 raise RuntimeError(f'{key}={data} should contain "ALT" or be {cls}')
-
-        # TODO: list[Union[str, ...]] に対応する
-        if cls == list[str]:
-            if isinstance(data, dict) and "ALT" in data:
-                union = self.get_union(_fun.ListStrFunction, data, key=key)
-                return union.run()
-            # [[fallthrough]]
 
         if _ty.get_origin(cls) is list:
             if not isinstance(data, list):
                 raise RuntimeError(f"{key}={data} should be list")
             return [self.run(_ty.get_args(cls)[0], item) for item in data]
-
-        if cls is str:
-            if isinstance(data, dict) and "ALT" in data:
-                union = self.get_union(_fun.StrFunction, data, key=key)
-                match union:
-                    case _fun.FileName():
-                        return self.filepath.name
-                    case _fun.FileStem():
-                        return self.filepath.stem
-                    case _fun.FunPatSubst():
-                        return union.run()
-                    case _:
-                        _ty.assert_never(union)
-            # [[fallthrough]]
 
         return cls(data)
 

@@ -6,10 +6,9 @@ from pathlib import Path
 __all__ = [
     "FileName",
     "FileStem",
-    "StrFunction",
-    "FunWildcard",
     "FunPatSubst",
-    "ListStrFunction",
+    "FunWildcard",
+    "BuiltinFunction",
 ]
 
 
@@ -38,9 +37,6 @@ class FunPatSubst:
             return [pattern.sub(repl, text) for text in self.texts]
 
 
-StrFunction = _ty.Union[FileName, FileStem, FunPatSubst]
-
-
 def _path_to_str(path: Path) -> str:
     if path.is_dir():
         return f"{path}/"
@@ -56,4 +52,4 @@ class FunWildcard:
         return [_path_to_str(path) for path in Path(".").glob(self.pattern)]
 
 
-ListStrFunction = _ty.Union[FunWildcard, FunPatSubst]
+BuiltinFunction = _ty.Union[FileName, FileStem, FunPatSubst, FunWildcard]

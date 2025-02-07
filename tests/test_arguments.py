@@ -91,7 +91,7 @@ def test_obj_to_dataclass_alt_without_args():
 
 def test_obj_to_dataclass_file_stem():
     obj = {
-        "ALT": "FileStem",
+        "FUNC": "FileStem",
     }
     data = obj_to_dataclass(str, obj, Path(__file__))
     assert data == "test_arguments", str(data)
@@ -112,7 +112,7 @@ def test_obj_to_dataclass_union_without_alt():
 
 def test_obj_to_dataclass_fun_wildcard():
     obj = {
-        "ALT": "FunWildcard",
+        "FUNC": "FunWildcard",
         "ARGS": {
             "pattern": "*.toml",
         },
@@ -123,7 +123,7 @@ def test_obj_to_dataclass_fun_wildcard():
 
 def test_obj_to_dataclass_fun_pat_subst():
     obj = {
-        "ALT": "FunPatSubst",
+        "FUNC": "FunPatSubst",
         "ARGS": {
             "pattern": "%.c",
             "replacement": "%.o",
@@ -136,12 +136,12 @@ def test_obj_to_dataclass_fun_pat_subst():
 
 def test_obj_to_dataclass_pat_subst_with_wildcard():
     obj = {
-        "ALT": "FunPatSubst",
+        "FUNC": "FunPatSubst",
         "ARGS": {
             "pattern": "%.toml",
             "replacement": "%.yaml",
             "texts": {
-                "ALT": "FunWildcard",
+                "FUNC": "FunWildcard",
                 "ARGS": {
                     "pattern": "*.toml",
                 },
@@ -154,7 +154,7 @@ def test_obj_to_dataclass_pat_subst_with_wildcard():
 
 def test_obj_to_dataclass_function_in_union():
     obj = {
-        "ALT": "FileStem",
+        "FUNC": "FileStem",
     }
     data = obj_to_dataclass(Union[str, int], obj, filepath=Path(__file__))
     assert data == "test_arguments", str(data)
