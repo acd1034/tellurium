@@ -202,6 +202,11 @@ class _ObjToDataclass:
                     result = str(self.filepath) if self.filepath else "<unknown>"
                 case _func.FileName():
                     result = self.filepath.name if self.filepath else "<unknown>"
+                case _func.FileDir():
+                    if self.filepath:
+                        result = _func.path_to_str(self.filepath.parent)
+                    else:
+                        result = "<unknown>"
                 case _func.Placeholder():
                     if func.key not in mapping:
                         raise self.run_time_error(

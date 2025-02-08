@@ -6,7 +6,9 @@ from pathlib import Path
 __all__ = [
     "FilePath",
     "FileName",
+    "FileDir",
     "PatSubst",
+    "path_to_str",
     "Wildcard",
     "Matrix",
     "Placeholder",
@@ -25,6 +27,11 @@ class FileName:
 
 
 @_dc.dataclass
+class FileDir:
+    pass
+
+
+@_dc.dataclass
 class PatSubst:
     pattern: str
     replacement: str
@@ -39,7 +46,7 @@ class PatSubst:
             return [pattern.sub(repl, text) for text in self.texts]
 
 
-def _path_to_str(path: Path) -> str:
+def path_to_str(path: Path) -> str:
     if path.is_dir():
         return f"{path}/"
     else:
@@ -51,7 +58,7 @@ class Wildcard:
     pattern: str
 
     def run(self) -> list[str]:
-        return [_path_to_str(path) for path in Path(".").glob(self.pattern)]
+        return [path_to_str(path) for path in Path(".").glob(self.pattern)]
 
 
 @_dc.dataclass
@@ -64,4 +71,12 @@ class Placeholder:
     key: str
 
 
-BuiltinFunction = _ty.Union[FilePath, FileName, PatSubst, Wildcard, Matrix, Placeholder]
+BuiltinFunction = _ty.Union[
+    FilePath,
+    FileName,
+    FileDir,
+    PatSubst,
+    Wildcard,
+    Matrix,
+    Placeholder,
+]

@@ -138,6 +138,14 @@ def test_obj_to_dataclass_file_name():
     assert data == "test_arguments.py", f"{data=}"
 
 
+def test_obj_to_dataclass_file_dir():
+    obj = {
+        "FUNC": "FileDir",
+    }
+    data = obj_to_dataclass(str, obj, Path(__file__))
+    assert data.endswith("/"), f"{data=}"
+
+
 def test_obj_to_dataclass_union_without_alt():
     obj = {
         "ALT": "int",
@@ -188,6 +196,21 @@ def test_obj_to_dataclass_pat_subst_str():
     }
     data = obj_to_dataclass(str, obj, Path(__file__))
     assert data.endswith("test_arguments_copy.py"), f"{data=}"
+
+
+def test_obj_to_dataclass_pat_subst_with_file_dir():
+    obj = {
+        "FUNC": "PatSubst",
+        "ARGS": {
+            "pattern": "%/",
+            "replacement": "%/simple_name.py",
+            "texts": {
+                "FUNC": "FileDir",
+            },
+        },
+    }
+    data = obj_to_dataclass(str, obj, filepath=Path(__file__))
+    assert data.endswith("simple_name.py"), f"{data=}"
 
 
 def test_obj_to_dataclass_pat_subst_with_wildcard():
