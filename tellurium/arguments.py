@@ -254,6 +254,14 @@ class _ObjToDataclass:
                 for item in data
             ]
 
+        if cls is list:
+            if not isinstance(data, list):
+                raise self.run_time_error("expected to be list", data, key)
+            new_key = _concat_keys(key, "list")
+            return [
+                self.run(_ty.Any, item, key=new_key, mapping=mapping) for item in data
+            ]
+
         if _ty.get_origin(cls) is dict:
             if not isinstance(data, dict):
                 raise self.run_time_error("expected to be dict", data, key)

@@ -219,7 +219,7 @@ def test_obj_to_dataclass_any():
     assert data == 3.14, f"{data=}"
 
 
-@pytest.mark.xfail()
+# @pytest.mark.xfail()
 def test_obj_to_dataclass_function_in_any():
     obj = [
         "Hello",
