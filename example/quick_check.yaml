@@ -1,7 +1,6 @@
 output: example/output.yml
 print:
-  msg:
-    FUNC: FileName
+  msg: { FUNC: FileName }
 print_or_int: 42
 opt_float: 3.14
 list_int:
@@ -10,7 +9,5 @@ list_int:
     mapping:
       number: [0, 1, 2, 3]
     template: { FUNC: Placeholder, ARGS: { key: number } }
-fun_list_str:
-  FUNC: Wildcard
-  ARGS:
-    pattern: "example/*.yml"
+list_str: { FUNC: Wildcard, ARGS: { pattern: "example/*.yml" } }
+list_union: []

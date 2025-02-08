@@ -18,7 +18,8 @@ class Main:
     print_or_int: _ty.Union[Print, int]
     opt_float: _ty.Optional[float]
     list_int: list[int]
-    fun_list_str: list[str]
+    list_str: list[str]
+    list_union: list[_ty.Union[int, str]]
     opt_float_with_default: _ty.Optional[float] = None
 
     def run(self):
