@@ -240,6 +240,30 @@ def placeholder(key: str) -> dict:
     }
 
 
+def wildcard(pattern: str) -> dict:
+    return {
+        "FUNC": "Wildcard",
+        "ARGS": {
+            "pattern": pattern,
+        },
+    }
+
+
+def patsubst(pattern: str, replacement: str, texts: Union[list[str], str]) -> dict:
+    return {
+        "FUNC": "PatSubst",
+        "ARGS": {
+            "pattern": pattern,
+            "replacement": replacement,
+            "texts": texts,
+        },
+    }
+
+
+def filename() -> dict:
+    return {"FUNC": "FileName"}
+
+
 def test_obj_to_dataclass_matrix():
     obj = {
         "FUNC": "Matrix",
@@ -311,3 +335,31 @@ def test_obj_to_dataclass_matrix_dict_template():
     assert all(item["msg"] == "Hello" for item in data), f"{data=}"
     for i, item in enumerate(data):
         assert item["number"] == i
+
+
+@dataclass
+class Task:
+    input: str
+    output: str
+    config: str
+
+
+def test_obj_to_dataclass_matrix_with_other_function():
+    obj = {
+        "FUNC": "Matrix",
+        "ARGS": {
+            "mapping": {
+                "input": wildcard("*.toml"),
+            },
+            "template": {
+                "input": placeholder("input"),
+                "output": patsubst("%.toml", "%.png", placeholder("input")),
+                "config": filename(),
+            },
+        },
+    }
+    data = obj_to_dataclass(cls=list[Task], data=obj, filepath=Path(__file__))
+    assert isinstance_generic(data, list[Task]), f"{data=}"
+    assert len(data) == 1, f"{data=}"
+    expected = Task("pyproject.toml", "pyproject.png", "test_arguments.py")
+    assert data[0] == expected, f"{data=}"

@@ -26,7 +26,7 @@ def _is_optional(cls: type[_ty.Any]):
     )
 
 
-def isinstance_generic(obj, typ) -> bool:
+def isinstance_generic(obj, typ: type[_ty.Any]) -> bool:
     if typ is _ty.Any:
         return True
 
@@ -36,16 +36,10 @@ def isinstance_generic(obj, typ) -> bool:
     origin = _ty.get_origin(typ)
     args = _ty.get_args(typ)
 
-    if origin is None:
-        return False
-
     if origin is _ty.Union:
         return any(isinstance_generic(obj, arg) for arg in args)
 
-    if not isinstance(obj, origin):
-        return False
-
-    if args:
+    if isinstance(obj, origin):
         if origin is list:
             return all(isinstance_generic(x, args[0]) for x in obj)
         elif origin is dict:
@@ -58,6 +52,48 @@ def isinstance_generic(obj, typ) -> bool:
                 return all(isinstance_generic(x, args[0]) for x in obj)
             elif len(args) == len(obj):
                 return all(isinstance_generic(x, t) for x, t in zip(obj, args))
+
+    return False
+
+
+def instantiate_generic(obj, typ: type[_T]) -> _T:
+    # `Any` の場合はそのまま返す
+    if typ is _ty.Any:
+        return obj
+
+    # `typ` が通常の型なら、単純にキャスト
+    if isinstance(typ, type):
+        if isinstance(obj, typ):
+            return obj
+        return typ(obj)
+
+    # `typ` がジェネリック型の場合
+    origin = _ty.get_origin(typ)
+    args = _ty.get_args(typ)
+
+    # `Union` の場合は最初に適合する型でキャスト
+    if origin is _ty.Union:
+        for t in args:
+            if isinstance_generic(obj, t):
+                return instantiate_generic(obj, t)
+        raise TypeError(f"Cannot instantiate {obj} as {typ}")
+
+    if isinstance(obj, origin):
+        if origin is list:
+            return [instantiate_generic(x, args[0]) for x in obj]
+        elif origin is dict:
+            return {
+                instantiate_generic(k, args[0]): instantiate_generic(v, args[1])
+                for k, v in obj.items()
+            }
+        elif origin is tuple:
+            if len(args) == 2 and args[1] is ...:  # tuple[int, ...] の場合
+                return tuple(instantiate_generic(x, args[0]) for x in obj)
+            elif len(args) == len(obj):  # tuple[int, str] などの場合
+                return tuple(instantiate_generic(x, t) for x, t in zip(obj, args))
+
+    # 変換できない場合はエラー
+    raise TypeError(f"Unsupported type: {typ}")
 
 
 def _concat_keys(left: _ty.Optional[str], right: str) -> str:
@@ -133,9 +169,6 @@ class _ObjToDataclass:
 
         if isinstance(data, dict) and "FUNC" in data:
             if data["FUNC"] == "Matrix":
-                if _ty.get_origin(cls) is not list:
-                    raise self.run_time_error(f"expected to be {cls}", data, key)
-
                 matrix_args = self.dict_get(data, "ARGS", key=key)
                 args_key = _concat_keys(key, "ARGS")
 
@@ -151,7 +184,7 @@ class _ObjToDataclass:
 
                 matrix_template = self.dict_get(matrix_args, "template", key=args_key)
                 template_key = _concat_keys(args_key, "template")
-                return [
+                result = [
                     self.run(
                         _ty.get_args(cls)[0],
                         matrix_template,
@@ -160,6 +193,7 @@ class _ObjToDataclass:
                     )
                     for new_items in mappings
                 ]
+                return instantiate_generic(result, cls)
 
             func = self.get_builtin_function(data, key=key, mapping=mapping)
 
@@ -177,10 +211,7 @@ class _ObjToDataclass:
                 case _:
                     result = func.run()
 
-            if not isinstance_generic(result, cls):
-                raise self.run_time_error(f"expected to be {cls}", result, key)
-
-            return result
+            return instantiate_generic(result, cls)
 
         if _dc.is_dataclass(cls):
             if not isinstance(data, dict):
@@ -213,6 +244,7 @@ class _ObjToDataclass:
                     f"expected to contain {"ALT"!r} or be {cls}", data, key
                 )
 
+        # TODO: list only, dict onlyに対応する
         if _ty.get_origin(cls) is list:
             if not isinstance(data, list):
                 raise self.run_time_error("expected to be list", data, key)
@@ -221,6 +253,16 @@ class _ObjToDataclass:
                 self.run(_ty.get_args(cls)[0], item, key=new_key, mapping=mapping)
                 for item in data
             ]
+
+        if _ty.get_origin(cls) is dict:
+            if not isinstance(data, dict):
+                raise self.run_time_error("expected to be dict", data, key)
+            new_key = _concat_keys(key, "dict")
+            # TODO: kにself.runを適用
+            return {
+                k: self.run(_ty.get_args(cls)[1], v, key=new_key, mapping=mapping)
+                for k, v in data.items()
+            }
 
         if cls is _ty.Any:
             return self.run(type(data), data, key=key, mapping=mapping)
