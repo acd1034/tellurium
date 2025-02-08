@@ -1,4 +1,4 @@
-output: example/output.yml
+output: example/main.yml
 print:
   msg: { FUNC: FileName }
 print_or_int: 42

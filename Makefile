@@ -1,15 +1,15 @@
 .PHONY: all
-all: example/output.yml example/example.yml
+all: example/main.yml example/main_example.yml
 
-example/output.yml: example/quick_check.yaml
+example/main.yml: example/main.yaml
 	poetry run python -m tellurium --config $<
 
-example/example.yml:
+example/main_example.yml:
 	poetry run python -m tellurium --emit_example $@
 
 .PHONY: clean
 clean:
-	rm example/*.yml
+	find example/ -name "*.yml" -exec rm {} +
 
 MODULE_NAME = sample2
 
