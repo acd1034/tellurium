@@ -27,7 +27,7 @@ class Empty:
 
 def test_dataclass_to_obj():
     obj = dataclass_to_obj(Main)
-    # assert obj == {}, str(obj)
+    # assert obj == {}, f"{obj=}"
     assert obj["print"]["msg"] == "<class 'str'>"
     assert obj["secret"] == dedent("""
         - ALT: Print
@@ -45,7 +45,7 @@ def test_dataclass_to_obj_empty_dataclass():
         - ALT: Empty
         - ALT: str
           ARGS: <class 'str'>
-        """).lstrip("\n"), str(obj)
+        """).lstrip("\n"), f"{obj=}"
 
 
 def test_obj_to_dataclass():
@@ -103,7 +103,7 @@ def test_obj_to_dataclass_alt_without_args():
         "ALT": "Empty",
     }
     data = obj_to_dataclass(Union[Empty, str], obj)
-    assert data == Empty(), str(data)
+    assert data == Empty(), f"{data=}"
 
 
 def test_obj_to_dataclass_file_path():
@@ -111,7 +111,7 @@ def test_obj_to_dataclass_file_path():
         "FUNC": "FilePath",
     }
     data = obj_to_dataclass(str, obj, Path(__file__))
-    assert data.endswith("test_arguments.py"), str(data)
+    assert data.endswith("test_arguments.py"), f"{data=}"
 
 
 def test_obj_to_dataclass_file_name():
@@ -119,7 +119,7 @@ def test_obj_to_dataclass_file_name():
         "FUNC": "FileName",
     }
     data = obj_to_dataclass(str, obj, Path(__file__))
-    assert data == "test_arguments.py", str(data)
+    assert data == "test_arguments.py", f"{data=}"
 
 
 def test_obj_to_dataclass_union_without_alt():
@@ -128,11 +128,11 @@ def test_obj_to_dataclass_union_without_alt():
         "ARGS": 42,
     }
     data = obj_to_dataclass(Union[int, str], obj)
-    assert data == 42, str(data)
+    assert data == 42, f"{data=}"
 
     obj = 42
     data = obj_to_dataclass(Union[int, str], obj)
-    assert data == 42, str(data)
+    assert data == 42, f"{data=}"
 
 
 def test_obj_to_dataclass_wildcard():
@@ -143,7 +143,7 @@ def test_obj_to_dataclass_wildcard():
         },
     }
     data = obj_to_dataclass(list[str], obj)
-    assert data == ["pyproject.toml"], str(data)
+    assert data == ["pyproject.toml"], f"{data=}"
 
 
 def test_obj_to_dataclass_pat_subst():
@@ -156,7 +156,7 @@ def test_obj_to_dataclass_pat_subst():
         },
     }
     data = obj_to_dataclass(list[str], obj)
-    assert data == ["foo.o", "bar.o", "baz.o"], str(data)
+    assert data == ["foo.o", "bar.o", "baz.o"], f"{data=}"
 
 
 def test_obj_to_dataclass_pat_subst_str():
@@ -171,7 +171,7 @@ def test_obj_to_dataclass_pat_subst_str():
         },
     }
     data = obj_to_dataclass(str, obj, Path(__file__))
-    assert data.endswith("test_arguments_copy.py"), str(data)
+    assert data.endswith("test_arguments_copy.py"), f"{data=}"
 
 
 def test_obj_to_dataclass_pat_subst_with_wildcard():
@@ -189,7 +189,7 @@ def test_obj_to_dataclass_pat_subst_with_wildcard():
         },
     }
     data = obj_to_dataclass(list[str], obj)
-    assert data == ["pyproject.yaml"], str(data)
+    assert data == ["pyproject.yaml"], f"{data=}"
 
 
 def test_obj_to_dataclass_function_in_union():
@@ -197,7 +197,7 @@ def test_obj_to_dataclass_function_in_union():
         "FUNC": "FileName",
     }
     data = obj_to_dataclass(Union[str, int], obj, filepath=Path(__file__))
-    assert data == "test_arguments.py", str(data)
+    assert data == "test_arguments.py", f"{data=}"
 
 
 def test_obj_to_dataclass_check_loc_in_error():
@@ -215,8 +215,20 @@ def test_obj_to_dataclass_check_loc_in_error():
 def test_obj_to_dataclass_any():
     obj = 3.14
     data = obj_to_dataclass(Any, obj)
-    assert isinstance(data, float), str(data)
-    assert data == 3.14, str(data)
+    assert isinstance(data, float), f"{data=}"
+    assert data == 3.14, f"{data=}"
+
+
+@pytest.mark.xfail()
+def test_obj_to_dataclass_function_in_any():
+    obj = [
+        "Hello",
+        {"FUNC": "FileName"},
+    ]
+    data = obj_to_dataclass(Any, obj, filepath=Path(__file__))
+    assert isinstance_generic(data, list[str]), f"{data=}"
+    assert data[0] == "Hello", f"{data[0]=}"
+    assert data[1] == "test_arguments.py", f"{data[1]=}"
 
 
 def placeholder(key: str) -> dict:
@@ -239,8 +251,8 @@ def test_obj_to_dataclass_matrix():
         },
     }
     data = obj_to_dataclass(list[int], obj)
-    assert isinstance_generic(data, list[int]), str(data)
-    assert data == [0, 1, 2, 3], str(data)
+    assert isinstance_generic(data, list[int]), f"{data=}"
+    assert data == [0, 1, 2, 3], f"{data=}"
 
 
 def test_obj_to_dataclass_matrix_dataclass_template():
@@ -262,8 +274,8 @@ def test_obj_to_dataclass_matrix_dataclass_template():
         },
     }
     data = obj_to_dataclass(cls=list[X], data=obj)
-    assert isinstance_generic(data, list[X]), str(data)
-    assert all(item.msg == "Hello" for item in data), str(data)
+    assert isinstance_generic(data, list[X]), f"{data=}"
+    assert all(item.msg == "Hello" for item in data), f"{data=}"
     for i, item in enumerate(data):
         assert item.number == i
 
@@ -276,8 +288,8 @@ def test_obj_to_dataclass_function_in_dict():
         },
     }
     data = obj_to_dataclass(cls=dict, data=obj, filepath=Path(__file__))
-    assert isinstance(data, dict), str(data)
-    assert data["msg"] == "test_arguments.py", str(data["msg"])
+    assert isinstance(data, dict), f"{data=}"
+    assert data["msg"] == "test_arguments.py", f"{data["msg"]=}"
 
 
 @pytest.mark.xfail()
@@ -295,7 +307,7 @@ def test_obj_to_dataclass_matrix_dict_template():
         },
     }
     data = obj_to_dataclass(cls=list[dict], data=obj)
-    assert isinstance_generic(data, list[dict]), str(data)
-    assert all(item["msg"] == "Hello" for item in data), str(data)
+    assert isinstance_generic(data, list[dict]), f"{data=}"
+    assert all(item["msg"] == "Hello" for item in data), f"{data=}"
     for i, item in enumerate(data):
         assert item["number"] == i

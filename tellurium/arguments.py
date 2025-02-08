@@ -223,7 +223,7 @@ class _ObjToDataclass:
             ]
 
         if cls is _ty.Any:
-            return data
+            return self.run(type(data), data, key=key, mapping=mapping)
 
         return cls(data)
 
