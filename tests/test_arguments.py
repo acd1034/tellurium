@@ -303,7 +303,6 @@ def test_obj_to_dataclass_matrix_dataclass_template():
         assert item.number == i
 
 
-@pytest.mark.xfail()
 def test_obj_to_dataclass_function_in_dict():
     obj = {
         "msg": {
@@ -315,13 +314,13 @@ def test_obj_to_dataclass_function_in_dict():
     assert data["msg"] == "test_arguments.py", f"{data["msg"]=}"
 
 
-@pytest.mark.xfail()
 def test_obj_to_dataclass_matrix_dict_template():
+    numbers = [0, 1, 2, 42]
     obj = {
         "FUNC": "Matrix",
         "ARGS": {
             "mapping": {
-                "number": [0, 1, 2, 3],
+                "number": numbers,
             },
             "template": {
                 "msg": "Hello",
@@ -332,8 +331,8 @@ def test_obj_to_dataclass_matrix_dict_template():
     data = obj_to_dataclass(cls=list[dict], data=obj)
     assert isinstance_generic(data, list[dict]), f"{data=}"
     assert all(item["msg"] == "Hello" for item in data), f"{data=}"
-    for i, item in enumerate(data):
-        assert item["number"] == i
+    for item, n in zip(data, numbers):
+        assert item["number"] == n, f"{data=}"
 
 
 @dataclass
