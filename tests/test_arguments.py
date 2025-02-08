@@ -41,11 +41,27 @@ def test_dataclass_to_obj():
 
 def test_dataclass_to_obj_empty_dataclass():
     obj = dataclass_to_obj(Union[Empty, str])
-    assert obj == dedent("""
+    expected = dedent("""
         - ALT: Empty
         - ALT: str
           ARGS: <class 'str'>
-        """).lstrip("\n"), f"{obj=}"
+        """).lstrip("\n")
+    assert obj == expected, f"{obj=}"
+
+
+def test_dataclass_to_obj_list_of_union():
+    obj = dataclass_to_obj(list[Union[int, str]])
+    expected = [
+        {
+            "ALT": "int",
+            "ARGS": "<class 'int'>",
+        },
+        {
+            "ALT": "str",
+            "ARGS": "<class 'str'>",
+        },
+    ]
+    assert obj == expected, f"{obj=}"
 
 
 def test_obj_to_dataclass():

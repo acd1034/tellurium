@@ -293,17 +293,6 @@ def obj_to_dataclass(cls: type[_T], data, filepath: _ty.Optional[Path] = None) -
     return _ObjToDataclass(filepath).run(cls, data)
 
 
-def _get_field_default(field: _dc.Field) -> _ty.Any:
-    # デフォルト値がある場合はそのまま使用
-    if field.default is not _dc.MISSING:
-        return field.default
-    if field.default_factory is not _dc.MISSING:
-        return field.default_factory()
-
-    # デフォルトがない場合
-    return dataclass_to_obj(field.type)
-
-
 class _YAMLDumper(_yaml.SafeDumper):
     pass
 
@@ -319,6 +308,29 @@ def _block_scalar_representer(dumper, data):
 _yaml.add_representer(_BlockScalarStr, _block_scalar_representer, Dumper=_YAMLDumper)
 
 
+def _get_field_default(field: _dc.Field) -> _ty.Any:
+    # デフォルト値がある場合はそのまま使用
+    if field.default is not _dc.MISSING:
+        return field.default
+    if field.default_factory is not _dc.MISSING:
+        return field.default_factory()
+
+    # デフォルトがない場合
+    return dataclass_to_obj(field.type)
+
+
+def _get_alternatives(cls: type[_ty.Any]) -> list[dict]:
+    alternatives = []
+    for alternative in _ty.get_args(cls):
+        arguments = dataclass_to_obj(alternative)
+        if isinstance(arguments, dict) and not arguments:
+            obj = {"ALT": alternative.__name__}
+        else:
+            obj = {"ALT": alternative.__name__, "ARGS": arguments}
+        alternatives.append(obj)
+    return alternatives
+
+
 def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
     if _dc.is_dataclass(cls):
         return {f.name: _get_field_default(f) for f in _dc.fields(cls)}
@@ -327,18 +339,14 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
         return dataclass_to_obj(_ty.get_args(cls)[0])
 
     if _ty.get_origin(cls) is _ty.Union:
-        alternatives = []
-        for alternative in _ty.get_args(cls):
-            arguments = dataclass_to_obj(alternative)
-            if isinstance(arguments, dict) and not arguments:
-                obj = {"ALT": alternative.__name__}
-            else:
-                obj = {"ALT": alternative.__name__, "ARGS": arguments}
-            alternatives.append(obj)
+        alternatives = _get_alternatives(cls)
         return _BlockScalarStr(_yaml.dump(alternatives, Dumper=_YAMLDumper))
 
     if _ty.get_origin(cls) is list:
-        return [dataclass_to_obj(_ty.get_args(cls)[0])]
+        elem_type = _ty.get_args(cls)[0]
+        if _ty.get_origin(elem_type) is _ty.Union:
+            return _get_alternatives(elem_type)
+        return [dataclass_to_obj(elem_type)]
 
     # その他の型の場合
     return f"{cls}"
