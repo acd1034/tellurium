@@ -219,7 +219,6 @@ def test_obj_to_dataclass_any():
     assert data == 3.14, f"{data=}"
 
 
-# @pytest.mark.xfail()
 def test_obj_to_dataclass_function_in_any():
     obj = [
         "Hello",
@@ -363,3 +362,13 @@ def test_obj_to_dataclass_matrix_with_other_function():
     assert len(data) == 1, f"{data=}"
     expected = Task("pyproject.toml", "pyproject.png", "test_arguments.py")
     assert data[0] == expected, f"{data=}"
+
+
+def test_obj_to_dataclass_type_conversion_in_dict_key():
+    obj = {
+        42: "no_extension",
+    }
+    data = obj_to_dataclass(cls=dict[str, str], data=obj)
+    assert isinstance_generic(data, dict[str, str]), f"{data=}"
+    assert "42" in data, f"{data=}"
+    assert data["42"] == "no_extension", f"{data["42"]=}"

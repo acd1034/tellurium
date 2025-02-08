@@ -266,9 +266,10 @@ class _ObjToDataclass:
             if not isinstance(data, dict):
                 raise self.run_time_error("expected to be dict", data, key)
             new_key = _concat_keys(key, "dict")
-            # TODO: kにself.runを適用
             return {
-                k: self.run(_ty.get_args(cls)[1], v, key=new_key, mapping=mapping)
+                self.run(
+                    _ty.get_args(cls)[0], k, key=new_key, mapping=mapping
+                ): self.run(_ty.get_args(cls)[1], v, key=new_key, mapping=mapping)
                 for k, v in data.items()
             }
 
