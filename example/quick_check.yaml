@@ -1,11 +1,16 @@
+output: example/output.yml
 print:
   msg:
     FUNC: FileName
 print_or_int: 42
 opt_float: 3.14
 list_int:
-  - 43
+  FUNC: Matrix
+  ARGS:
+    mapping:
+      number: [0, 1, 2, 3]
+    template: { FUNC: Placeholder, ARGS: { key: number } }
 fun_list_str:
   FUNC: Wildcard
   ARGS:
-    pattern: "*.yml"
+    pattern: "example/*.yml"
