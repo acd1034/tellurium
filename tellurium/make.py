@@ -60,3 +60,9 @@ class Make:
 def run_rules(rules: list[BuildRule], dry_run: bool = False) -> None:
     rules_dict = {str(rule.target): rule for rule in rules}
     Make(rules_dict, dry_run).run()
+
+
+if __name__ == "__main__":
+    from .arguments import make_from_arguments
+
+    run_rules(make_from_arguments(list[BuildRule]))

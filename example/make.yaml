@@ -1,12 +1,12 @@
 FUNC: Matrix
 ARGS:
   mapping:
-    input: { FUNC: Wildcard, ARGS: { pattern: "*.yaml" } }
+    input: { FUNC: Wildcard, ARGS: { pattern: "*.py" } }
   template:
     target:
       FUNC: PatSubst
       ARGS:
-        pattern: "%.yaml"
+        pattern: "%.py"
         replacement: "%.out"
         texts: { FUNC: Placeholder, ARGS: { key: input } }
     dependencies:
