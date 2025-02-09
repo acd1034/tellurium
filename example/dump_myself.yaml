@@ -1,4 +1,4 @@
-output: example/main.yml
+output: output_dump_myself.yaml
 print:
   msg: { FUNC: FileName }
 print_or_int: 42
@@ -9,5 +9,5 @@ list_int:
     mapping:
       number: [0, 1, 2, 3]
     template: { FUNC: Placeholder, ARGS: { key: number } }
-list_str: { FUNC: Wildcard, ARGS: { pattern: "example/*.yml" } }
+list_str: { FUNC: Wildcard, ARGS: { pattern: "*.yaml" } }
 list_union: []

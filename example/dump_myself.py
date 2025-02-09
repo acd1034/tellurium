@@ -3,7 +3,7 @@ import typing as _ty
 
 import yaml as _yaml
 
-from .arguments import make_from_arguments
+from tellurium.arguments import make_from_arguments
 
 
 @_dc.dataclass
@@ -12,7 +12,7 @@ class Print:
 
 
 @_dc.dataclass
-class Main:
+class DumpMyself:
     output: str
     print: Print
     print_or_int: _ty.Union[Print, int]
@@ -30,4 +30,4 @@ class Main:
 
 
 if __name__ == "__main__":
-    make_from_arguments(Main).run()
+    make_from_arguments(DumpMyself).run()
