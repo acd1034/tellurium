@@ -1,0 +1,11 @@
+input: { FUNC: Wildcard, ARGS: { pattern: "data/*.dat" } }
+output:
+  FUNC: PatSubst
+  ARGS:
+    pattern: "%.yaml"
+    replacement: "output_%.png"
+    texts: { FUNC: FileName }
+xlim: [-4, 1]
+# ylim: [-700, 700]
+xlabel: Energy (eV)
+ylabel: Spin Hall conductivity (S/cm)
