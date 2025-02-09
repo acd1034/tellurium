@@ -1,0 +1,18 @@
+FUNC: Matrix
+ARGS:
+  mapping:
+    input: { FUNC: Wildcard, ARGS: { pattern: "*.yaml" } }
+  template:
+    target:
+      FUNC: PatSubst
+      ARGS:
+        pattern: "%.yaml"
+        replacement: "%.out"
+        texts: { FUNC: Placeholder, ARGS: { key: input } }
+    dependencies:
+      - { FUNC: Placeholder, ARGS: { key: input } }
+    command:
+      - head
+      - -n
+      - 5
+      - { FUNC: Placeholder, ARGS: { key: input } }
