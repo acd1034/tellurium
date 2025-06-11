@@ -356,6 +356,10 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
         alternatives = _get_alternatives(cls)
         return _BlockScalarStr(_yaml.dump(alternatives, Dumper=_YAMLDumper))
 
+    if _ty.get_origin(cls) is _ty.Literal:
+        alternatives = _ty.get_args(cls)
+        return _BlockScalarStr(_yaml.dump(alternatives, Dumper=_YAMLDumper))
+
     if _ty.get_origin(cls) is list:
         elem_type = _ty.get_args(cls)[0]
         if _ty.get_origin(elem_type) is _ty.Union:

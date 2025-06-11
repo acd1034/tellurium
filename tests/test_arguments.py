@@ -49,6 +49,16 @@ def test_dataclass_to_obj_empty_dataclass():
     assert obj == expected, f"{obj=}"
 
 
+def test_dataclass_to_obj_literal():
+    obj = dataclass_to_obj(Literal["Apple", "Banana", "Chocolate"])
+    expected = dedent("""
+        - Apple
+        - Banana
+        - Chocolate
+        """).lstrip("\n")
+    assert obj == expected, f"{obj=}"
+
+
 def test_dataclass_to_obj_list_of_union():
     obj = dataclass_to_obj(list[Union[int, str]])
     expected = [

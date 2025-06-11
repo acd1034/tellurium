@@ -20,6 +20,7 @@ class DumpMyself:
     list_int: list[int]
     list_str: list[str]
     list_union: list[_ty.Union[int, str]]
+    literal: _ty.Literal["Apple", "Banana", "Chocolate"]
     opt_float_with_default: _ty.Optional[float] = None
 
     def run(self):

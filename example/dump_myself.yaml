@@ -11,3 +11,4 @@ list_int:
     template: { FUNC: Placeholder, ARGS: { key: number } }
 list_str: { FUNC: Wildcard, ARGS: { pattern: "*.yaml" } }
 list_union: []
+literal: "Apple"
