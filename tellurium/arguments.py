@@ -249,6 +249,15 @@ class _ObjToDataclass:
                     f"expected to contain {"ALT"!r} or be {cls}", data, key
                 )
 
+        if _ty.get_origin(cls) is _ty.Literal:
+            alternatives = _ty.get_args(cls)
+            if any(data == alt for alt in alternatives):
+                return data
+            else:
+                raise self.run_time_error(
+                    f"expected to be one of {alternatives}", data, key
+                )
+
         if _ty.get_origin(cls) is list:
             if not isinstance(data, list):
                 raise self.run_time_error("expected to be list", data, key)

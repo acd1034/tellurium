@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import pytest
 
@@ -410,3 +410,12 @@ def test_obj_to_dataclass_type_conversion_in_dict_key():
     assert isinstance_generic(data, dict[str, str]), f"{data=}"
     assert "42" in data, f"{data=}"
     assert data["42"] == "no_extension", f"{data["42"]=}"
+
+
+def test_obj_to_dataclass_literal():
+    obj = "Apple"
+    data = obj_to_dataclass(Literal["Apple", "Banana", "Chocolate"], obj)
+    assert data == "Apple"
+
+    with pytest.raises(RuntimeError):
+        obj_to_dataclass(Literal["Apple", "Banana", "Chocolate"], "Appl")
