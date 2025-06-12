@@ -392,3 +392,43 @@ def make_from_arguments(cls: type[_T]) -> _T:
         data = _yaml.safe_load(f)
 
     return obj_to_dataclass(cls, data, filepath=args.config)
+
+
+def asdict(data, cls: _ty.Optional[type[_ty.Any]] = None):
+    if cls is None:
+        cls = type(data)
+
+    if _dc.is_dataclass(cls):
+        return {f.name: asdict(getattr(data, f.name), f.type) for f in _dc.fields(data)}
+
+    if _ty.get_origin(cls) is _ty.Union:
+        args = _ty.get_args(cls)
+        assert type(data) in args, f"{type(data)=} should be contained in {args=}"
+        return {
+            "ALT": type(data).__name__,
+            "ARGS": asdict(data),
+        }
+
+    if _ty.get_origin(cls) is list:
+        typ = _ty.get_args(cls)[0]
+        return [asdict(v, typ) for v in data]
+
+    if cls is list:
+        return [asdict(v) for v in data]
+
+    if _ty.get_origin(cls) is tuple:
+        elems = _ty.get_args(cls)
+        return tuple(asdict(v, typ) for v, typ in zip(data, elems))
+
+    if cls is tuple:
+        return tuple(asdict(v) for v in data)
+
+    if _ty.get_origin(cls) is dict:
+        key_t = _ty.get_args(cls)[0]
+        value_t = _ty.get_args(cls)[1]
+        return {asdict(k, key_t): asdict(v, value_t) for k, v in data.items()}
+
+    if cls is dict:
+        return {asdict(k): asdict(v) for k, v in data.items()}
+
+    return data
