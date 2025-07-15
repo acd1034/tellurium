@@ -25,7 +25,7 @@ class Empty:
     pass
 
 
-def test_dataclass_to_obj():
+def test_dataclass_to_obj() -> None:
     obj = dataclass_to_obj(Main)
     # assert obj == {}, f"{obj=}"
     assert obj["print"]["msg"] == "<class 'str'>"
@@ -39,7 +39,7 @@ def test_dataclass_to_obj():
     assert obj["number"] is None
 
 
-def test_dataclass_to_obj_empty_dataclass():
+def test_dataclass_to_obj_empty_dataclass() -> None:
     obj = dataclass_to_obj(Union[Empty, str])
     expected = dedent("""
         - ALT: Empty
@@ -49,7 +49,7 @@ def test_dataclass_to_obj_empty_dataclass():
     assert obj == expected, f"{obj=}"
 
 
-def test_dataclass_to_obj_literal():
+def test_dataclass_to_obj_literal() -> None:
     obj = dataclass_to_obj(Literal["Apple", "Banana", "Chocolate"])
     expected = dedent("""
         - Apple
@@ -59,7 +59,7 @@ def test_dataclass_to_obj_literal():
     assert obj == expected, f"{obj=}"
 
 
-def test_dataclass_to_obj_list_of_union():
+def test_dataclass_to_obj_list_of_union() -> None:
     obj = dataclass_to_obj(list[Union[int, str]])
     expected = [
         {
@@ -74,7 +74,7 @@ def test_dataclass_to_obj_list_of_union():
     assert obj == expected, f"{obj=}"
 
 
-def test_obj_to_dataclass():
+def test_obj_to_dataclass() -> None:
     obj = {
         "print": {
             "msg": "Hello world!",
@@ -90,7 +90,7 @@ def test_obj_to_dataclass():
     assert main.number is None
 
 
-def test_obj_to_dataclass_dict():
+def test_obj_to_dataclass_dict() -> None:
     obj = {
         "print": {
             "msg": "Goodbye",
@@ -105,7 +105,7 @@ def test_obj_to_dataclass_dict():
     assert data["secret"] == 42
 
 
-def test_obj_to_dataclass_dataclass_for_alt():
+def test_obj_to_dataclass_dataclass_for_alt() -> None:
     obj = {
         "print": {
             "msg": "Hello world!",
@@ -124,7 +124,7 @@ def test_obj_to_dataclass_dataclass_for_alt():
     assert main.number == 3.14
 
 
-def test_obj_to_dataclass_alt_without_args():
+def test_obj_to_dataclass_alt_without_args() -> None:
     obj = {
         "ALT": "Empty",
     }
@@ -132,7 +132,7 @@ def test_obj_to_dataclass_alt_without_args():
     assert data == Empty(), f"{data=}"
 
 
-def test_obj_to_dataclass_file_path():
+def test_obj_to_dataclass_file_path() -> None:
     obj = {
         "FUNC": "FilePath",
     }
@@ -140,7 +140,7 @@ def test_obj_to_dataclass_file_path():
     assert data.endswith("test_arguments.py"), f"{data=}"
 
 
-def test_obj_to_dataclass_file_name():
+def test_obj_to_dataclass_file_name() -> None:
     obj = {
         "FUNC": "FileName",
     }
@@ -148,7 +148,7 @@ def test_obj_to_dataclass_file_name():
     assert data == "test_arguments.py", f"{data=}"
 
 
-def test_obj_to_dataclass_file_dir():
+def test_obj_to_dataclass_file_dir() -> None:
     obj = {
         "FUNC": "FileDir",
     }
@@ -156,7 +156,7 @@ def test_obj_to_dataclass_file_dir():
     assert data.endswith("/"), f"{data=}"
 
 
-def test_obj_to_dataclass_union_without_alt():
+def test_obj_to_dataclass_union_without_alt() -> None:
     obj = {
         "ALT": "int",
         "ARGS": 42,
@@ -169,7 +169,7 @@ def test_obj_to_dataclass_union_without_alt():
     assert data == 42, f"{data=}"
 
 
-def test_obj_to_dataclass_wildcard():
+def test_obj_to_dataclass_wildcard() -> None:
     obj = {
         "FUNC": "Wildcard",
         "ARGS": {
@@ -180,7 +180,7 @@ def test_obj_to_dataclass_wildcard():
     assert data == ["pyproject.toml"], f"{data=}"
 
 
-def test_obj_to_dataclass_pat_subst():
+def test_obj_to_dataclass_pat_subst() -> None:
     obj = {
         "FUNC": "PatSubst",
         "ARGS": {
@@ -193,7 +193,7 @@ def test_obj_to_dataclass_pat_subst():
     assert data == ["foo.o", "bar.o", "baz.o"], f"{data=}"
 
 
-def test_obj_to_dataclass_pat_subst_str():
+def test_obj_to_dataclass_pat_subst_str() -> None:
     obj = {
         "FUNC": "PatSubst",
         "ARGS": {
@@ -208,7 +208,7 @@ def test_obj_to_dataclass_pat_subst_str():
     assert data.endswith("test_arguments_copy.py"), f"{data=}"
 
 
-def test_obj_to_dataclass_pat_subst_with_file_dir():
+def test_obj_to_dataclass_pat_subst_with_file_dir() -> None:
     obj = {
         "FUNC": "PatSubst",
         "ARGS": {
@@ -223,7 +223,7 @@ def test_obj_to_dataclass_pat_subst_with_file_dir():
     assert data.endswith("simple_name.py"), f"{data=}"
 
 
-def test_obj_to_dataclass_pat_subst_with_wildcard():
+def test_obj_to_dataclass_pat_subst_with_wildcard() -> None:
     obj = {
         "FUNC": "PatSubst",
         "ARGS": {
@@ -241,7 +241,7 @@ def test_obj_to_dataclass_pat_subst_with_wildcard():
     assert data == ["pyproject.yaml"], f"{data=}"
 
 
-def test_obj_to_dataclass_function_in_union():
+def test_obj_to_dataclass_function_in_union() -> None:
     obj = {
         "FUNC": "FileName",
     }
@@ -249,7 +249,7 @@ def test_obj_to_dataclass_function_in_union():
     assert data == "test_arguments.py", f"{data=}"
 
 
-def test_obj_to_dataclass_check_loc_in_error():
+def test_obj_to_dataclass_check_loc_in_error() -> None:
     @dataclass
     class X:
         int_or_float: Union[int, float]
@@ -261,14 +261,14 @@ def test_obj_to_dataclass_check_loc_in_error():
         obj_to_dataclass(X, obj, filepath=Path(__file__))
 
 
-def test_obj_to_dataclass_any():
+def test_obj_to_dataclass_any() -> None:
     obj = 3.14
     data = obj_to_dataclass(Any, obj)
     assert isinstance(data, float), f"{data=}"
     assert data == 3.14, f"{data=}"
 
 
-def test_obj_to_dataclass_function_in_any():
+def test_obj_to_dataclass_function_in_any() -> None:
     obj = [
         "Hello",
         {"FUNC": "FileName"},
@@ -312,7 +312,7 @@ def filename() -> dict:
     return {"FUNC": "FileName"}
 
 
-def test_obj_to_dataclass_matrix():
+def test_obj_to_dataclass_matrix() -> None:
     obj = {
         "FUNC": "Matrix",
         "ARGS": {
@@ -327,7 +327,7 @@ def test_obj_to_dataclass_matrix():
     assert data == [0, 1, 2, 3], f"{data=}"
 
 
-def test_obj_to_dataclass_matrix_dataclass_template():
+def test_obj_to_dataclass_matrix_dataclass_template() -> None:
     @dataclass
     class X:
         msg: str
@@ -352,7 +352,7 @@ def test_obj_to_dataclass_matrix_dataclass_template():
         assert item.number == i
 
 
-def test_obj_to_dataclass_function_in_dict():
+def test_obj_to_dataclass_function_in_dict() -> None:
     obj = {
         "msg": {
             "FUNC": "FileName",
@@ -363,7 +363,7 @@ def test_obj_to_dataclass_function_in_dict():
     assert data["msg"] == "test_arguments.py", f"{data["msg"]=}"
 
 
-def test_obj_to_dataclass_matrix_dict_template():
+def test_obj_to_dataclass_matrix_dict_template() -> None:
     numbers = [0, 1, 2, 42]
     obj = {
         "FUNC": "Matrix",
@@ -391,7 +391,7 @@ class Task:
     config: str
 
 
-def test_obj_to_dataclass_matrix_with_other_function():
+def test_obj_to_dataclass_matrix_with_other_function() -> None:
     obj = {
         "FUNC": "Matrix",
         "ARGS": {
@@ -412,7 +412,7 @@ def test_obj_to_dataclass_matrix_with_other_function():
     assert data[0] == expected, f"{data=}"
 
 
-def test_obj_to_dataclass_type_conversion_in_dict_key():
+def test_obj_to_dataclass_type_conversion_in_dict_key() -> None:
     obj = {
         42: "no_extension",
     }
@@ -422,7 +422,7 @@ def test_obj_to_dataclass_type_conversion_in_dict_key():
     assert data["42"] == "no_extension", f"{data["42"]=}"
 
 
-def test_obj_to_dataclass_literal():
+def test_obj_to_dataclass_literal() -> None:
     obj = "Apple"
     data = obj_to_dataclass(Literal["Apple", "Banana", "Chocolate"], obj)
     assert data == "Apple"

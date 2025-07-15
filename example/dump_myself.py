@@ -23,7 +23,7 @@ class DumpMyself:
     literal: _ty.Literal["Apple", "Banana", "Chocolate"]
     opt_float_with_default: _ty.Optional[float] = None
 
-    def run(self):
+    def run(self) -> None:
         with open(self.output, "w") as f:
             _yaml.safe_dump(
                 _dc.asdict(self), f, default_flow_style=False, sort_keys=False
