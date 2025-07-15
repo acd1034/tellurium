@@ -3,6 +3,7 @@ import itertools as _it
 import typing as _ty
 from argparse import ArgumentParser
 from pathlib import Path
+from string import Template
 
 import yaml as _yaml
 
@@ -205,6 +206,17 @@ class _ObjToDataclass:
                 case _func.FileDir():
                     if self.filepath:
                         result = _func.path_to_str(self.filepath.parent)
+                    else:
+                        result = "<unknown>"
+                case _func.FileFmt():
+                    if self.filepath:
+                        temp = Template(func.fmt)
+                        # ${parent}/${stem}${suffix}
+                        result = temp.substitute(
+                            parent=str(self.filepath.parent),
+                            stem=self.filepath.stem,
+                            suffix=self.filepath.suffix,
+                        )
                     else:
                         result = "<unknown>"
                 case _func.Placeholder():

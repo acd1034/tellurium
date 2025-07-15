@@ -156,6 +156,18 @@ def test_obj_to_dataclass_file_dir() -> None:
     assert data.endswith("/"), f"{data=}"
 
 
+def test_obj_to_dataclass_file_fmt() -> None:
+    obj = {
+        "FUNC": "FileFmt",
+        "ARGS": {
+            "fmt": "${parent}/${stem}${suffix}",
+        },
+    }
+    path = Path(__file__)
+    data = obj_to_dataclass(str, obj, filepath=path)
+    assert data == f"{path.parent}/{path.stem}{path.suffix}", f"{data=}"
+
+
 def test_obj_to_dataclass_union_without_alt() -> None:
     obj = {
         "ALT": "int",

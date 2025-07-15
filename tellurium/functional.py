@@ -7,6 +7,7 @@ __all__ = [
     "FilePath",
     "FileName",
     "FileDir",
+    "FileFmt",
     "PatSubst",
     "path_to_str",
     "Wildcard",
@@ -29,6 +30,13 @@ class FileName:
 @_dc.dataclass
 class FileDir:
     pass
+
+
+@_dc.dataclass
+class FileFmt:
+    """Generate a file path using a format like ${parent}/${stem}${suffix}"""
+
+    fmt: str
 
 
 @_dc.dataclass
@@ -75,6 +83,7 @@ BuiltinFunction = _ty.Union[
     FilePath,
     FileName,
     FileDir,
+    FileFmt,
     PatSubst,
     Wildcard,
     Matrix,
