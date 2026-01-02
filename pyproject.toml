@@ -1,33 +1,38 @@
 # Install dependencies listed in pyproject.toml
-# $ poetry install
+# $ uv sync --extra dev
 # Update all dependencies to the latest versions
-# $ poetry update
+# $ uv lock --upgrade && uv sync --extra dev
 # Add a new package as a dependency to your project
-# $ poetry add <package>
+# $ uv add <package>
+# Add a new package as a development dependency
+# $ uv add <package> --dev
 # Remove a package
-# $ poetry remove <package>
-[tool.poetry]
-authors = ["acd1034 <48613285+acd1034@users.noreply.github.com>"]
-description = ""
+# $ uv remove <package>
+[project]
 name = "tellurium"
 version = "0.1.0"
+description = ""
+requires-python = ">=3.12"
 
-[tool.poetry.dependencies]
-matplotlib = "^3.5.2"
-numpy = "^2.0.0"
-pytest = "^8.0.2"
-python = "^3.12"
-pyyaml = "^6.0.1"
-rich = "^13.7.1"
-types-pyyaml = "^6.0.12.20240917"
+authors = [
+    { name = "acd1034", email = "48613285+acd1034@users.noreply.github.com" },
+]
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.9.8"
-mypy = "^1.13.0"
+dependencies = [
+    "matplotlib>=3.5.2",
+    "numpy>=2.0.0",
+    "pytest>=8.0.2",
+    "pyyaml>=6.0.1",
+    "rich>=13.7.1",
+    "types-pyyaml>=6.0.12.20240917",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.9.8", "mypy>=1.13.0"]
 
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 # 1行の最大文字数 (default: 88)
@@ -35,20 +40,23 @@ line-length = 88
 
 [tool.ruff.lint]
 # チェックするエラーの種類
+# https://docs.astral.sh/ruff/rules/
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
     "F",  # pyflakes
     "I",  # isort
+    "E",  # pycodestyle error
+    "W",  # pycodestyle warning
     "B",  # flake8-bugbear
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]
 # 除外するエラーの種類
 ignore = [
-    "E203", # whitespace before ':'
-    "E501", # line too long
-    "F503", # line break before binary operator
+    "E203",  # whitespace before ':'
+    "E501",  # line too long
+    "F503",  # line break before binary operator
+    "UP007", # Use `X | Y` for type annotations
+    "UP045", # Use `X | None` for type annotations
 ]
 
 # ファイルごとのエラー除外

@@ -46,7 +46,7 @@ class PatSubst:
     texts: _ty.Union[str, list[str]]
 
     def run(self) -> _ty.Union[str, list[str]]:
-        pattern = re.compile(f'^{self.pattern.replace("%", "(.*)")}$')
+        pattern = re.compile(f"^{self.pattern.replace('%', '(.*)')}$")
         repl = self.replacement.replace("%", r"\1")
         if isinstance(self.texts, str):
             return pattern.sub(repl, self.texts)

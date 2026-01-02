@@ -52,12 +52,14 @@ def isinstance_generic(obj, typ: type[_ty.Any]) -> bool:
             if len(args) == 2 and args[1] is ...:
                 return all(isinstance_generic(x, args[0]) for x in obj)
             elif len(args) == len(obj):
-                return all(isinstance_generic(x, t) for x, t in zip(obj, args))
+                return all(
+                    isinstance_generic(x, t) for x, t in zip(obj, args, strict=False)
+                )
 
     return False
 
 
-def instantiate_generic(obj, typ: type[_T]) -> _T:
+def instantiate_generic[T](obj, typ: type[T]) -> T:
     # `Any` の場合はそのまま返す
     if typ is _ty.Any:
         return obj
@@ -91,7 +93,9 @@ def instantiate_generic(obj, typ: type[_T]) -> _T:
             if len(args) == 2 and args[1] is ...:  # tuple[int, ...] の場合
                 return tuple(instantiate_generic(x, args[0]) for x in obj)
             elif len(args) == len(obj):  # tuple[int, str] などの場合
-                return tuple(instantiate_generic(x, t) for x, t in zip(obj, args))
+                return tuple(
+                    instantiate_generic(x, t) for x, t in zip(obj, args, strict=False)
+                )
 
     # 変換できない場合はエラー
     raise TypeError(f"Unsupported type: {typ}")
@@ -108,7 +112,7 @@ def _product_mapping(mapping: dict[str, list]) -> list[dict]:
     keys = mapping.keys()
     values = mapping.values()
     product = list(_it.product(*values))
-    return [dict(zip(keys, combination)) for combination in product]
+    return [dict(zip(keys, combination, strict=False)) for combination in product]
 
 
 @_dc.dataclass
@@ -258,7 +262,7 @@ class _ObjToDataclass:
                 return data
             else:
                 raise self.run_time_error(
-                    f"expected to contain {"ALT"!r} or be {cls}", data, key
+                    f"expected to contain {'ALT'!r} or be {cls}", data, key
                 )
 
         if _ty.get_origin(cls) is _ty.Literal:
@@ -315,7 +319,7 @@ class _ObjToDataclass:
         return cls(data)
 
 
-def obj_to_dataclass(cls: type[_T], data, filepath: _ty.Optional[Path] = None) -> _T:
+def obj_to_dataclass[T](cls: type[T], data, filepath: _ty.Optional[Path] = None) -> T:
     return _ObjToDataclass(filepath).run(cls, data)
 
 
@@ -390,7 +394,7 @@ def emit_yaml_example(cls: type[_ty.Any], filepath: Path):
         )
 
 
-def make_from_arguments(cls: type[_T]) -> _T:
+def make_from_arguments[T](cls: type[T]) -> T:
     parser = ArgumentParser()
     parser.add_argument("--config", type=Path, help="YAML configuration file")
     parser.add_argument("--emit_example", type=Path, help="emit configuration example")
@@ -430,7 +434,7 @@ def asdict(data, cls: _ty.Optional[type[_ty.Any]] = None):
 
     if _ty.get_origin(cls) is tuple:
         elems = _ty.get_args(cls)
-        return tuple(asdict(v, typ) for v, typ in zip(data, elems))
+        return tuple(asdict(v, typ) for v, typ in zip(data, elems, strict=False))
 
     if cls is tuple:
         return tuple(asdict(v) for v in data)
