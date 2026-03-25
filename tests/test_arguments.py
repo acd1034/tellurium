@@ -30,10 +30,10 @@ def test_dataclass_to_obj() -> None:
     # assert obj == {}, f"{obj=}"
     assert obj["print"]["msg"] == "<class 'str'>"
     assert obj["secret"] == dedent("""
-        - ALT: Print
+        - TYPE: Print
           ARGS:
             msg: <class 'str'>
-        - ALT: int
+        - TYPE: int
           ARGS: <class 'int'>
         """).lstrip("\n")
     assert obj["number"] is None
@@ -42,8 +42,8 @@ def test_dataclass_to_obj() -> None:
 def test_dataclass_to_obj_empty_dataclass() -> None:
     obj = dataclass_to_obj(Union[Empty, str])
     expected = dedent("""
-        - ALT: Empty
-        - ALT: str
+        - TYPE: Empty
+        - TYPE: str
           ARGS: <class 'str'>
         """).lstrip("\n")
     assert obj == expected, f"{obj=}"
@@ -63,11 +63,11 @@ def test_dataclass_to_obj_list_of_union() -> None:
     obj = dataclass_to_obj(list[Union[int, str]])
     expected = [
         {
-            "ALT": "int",
+            "TYPE": "int",
             "ARGS": "<class 'int'>",
         },
         {
-            "ALT": "str",
+            "TYPE": "str",
             "ARGS": "<class 'str'>",
         },
     ]
@@ -80,7 +80,7 @@ def test_obj_to_dataclass() -> None:
             "msg": "Hello world!",
         },
         "secret": {
-            "ALT": "int",
+            "TYPE": "int",
             "ARGS": 42,
         },
     }
@@ -111,7 +111,7 @@ def test_obj_to_dataclass_dataclass_for_alt() -> None:
             "msg": "Hello world!",
         },
         "secret": {
-            "ALT": "Print",
+            "TYPE": "Print",
             "ARGS": {
                 "msg": 42,
             },
@@ -126,7 +126,7 @@ def test_obj_to_dataclass_dataclass_for_alt() -> None:
 
 def test_obj_to_dataclass_alt_without_args() -> None:
     obj = {
-        "ALT": "Empty",
+        "TYPE": "Empty",
     }
     data = obj_to_dataclass(Union[Empty, str], obj)
     assert data == Empty(), f"{data=}"
@@ -170,7 +170,7 @@ def test_obj_to_dataclass_file_fmt() -> None:
 
 def test_obj_to_dataclass_union_without_alt() -> None:
     obj = {
-        "ALT": "int",
+        "TYPE": "int",
         "ARGS": 42,
     }
     data = obj_to_dataclass(Union[int, str], obj)

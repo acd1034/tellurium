@@ -155,7 +155,7 @@ class _ObjToDataclass:
         self, cls: type[_T], data, key: _ty.Optional[str], mapping: dict
     ) -> _T:
         for alternative in _ty.get_args(cls):
-            if alternative.__name__ == data["ALT"]:
+            if alternative.__name__ == data["TYPE"]:
                 new_key = _concat_keys(key, "ARGS")
                 return self.run(
                     alternative, data.get("ARGS", {}), key=new_key, mapping=mapping
@@ -267,13 +267,13 @@ class _ObjToDataclass:
                 return None
 
         if _ty.get_origin(cls) is _ty.Union:
-            if isinstance(data, dict) and "ALT" in data:
+            if isinstance(data, dict) and "TYPE" in data:
                 return self.get_union(cls, data, key=key, mapping=mapping)
             for t in _ty.get_args(cls):
                 if isinstance_generic(data, t):
                     return instantiate_generic(data, t)
             raise self.run_time_error(
-                f"expected to contain {'ALT'!r} or be {cls}", data, key
+                f"expected to contain {'TYPE'!r} or be {cls}", data, key
             )
 
         if _ty.get_origin(cls) is _ty.Literal:
@@ -365,9 +365,9 @@ def _get_alternatives(cls: type[_ty.Any]) -> list[dict]:
     for alternative in _ty.get_args(cls):
         arguments = dataclass_to_obj(alternative)
         if isinstance(arguments, dict) and not arguments:
-            obj = {"ALT": alternative.__name__}
+            obj = {"TYPE": alternative.__name__}
         else:
-            obj = {"ALT": alternative.__name__, "ARGS": arguments}
+            obj = {"TYPE": alternative.__name__, "ARGS": arguments}
         alternatives.append(obj)
     return alternatives
 
@@ -381,11 +381,15 @@ def dataclass_to_obj(cls: type[_ty.Any]) -> _ty.Any:
 
     if _ty.get_origin(cls) is _ty.Union:
         alternatives = _get_alternatives(cls)
-        return _BlockScalarStr(_yaml.dump(alternatives, Dumper=_YAMLDumper))
+        return _BlockScalarStr(
+            _yaml.dump(alternatives, Dumper=_YAMLDumper, sort_keys=False)
+        )
 
     if _ty.get_origin(cls) is _ty.Literal:
         alternatives = _ty.get_args(cls)
-        return _BlockScalarStr(_yaml.dump(alternatives, Dumper=_YAMLDumper))
+        return _BlockScalarStr(
+            _yaml.dump(alternatives, Dumper=_YAMLDumper, sort_keys=False)
+        )
 
     if _ty.get_origin(cls) is list:
         elem_type = _ty.get_args(cls)[0]
@@ -432,7 +436,7 @@ def asdict(data, cls: _ty.Optional[type[_ty.Any]] = None):
         args = _ty.get_args(cls)
         assert type(data) in args, f"{type(data)=} should be contained in {args=}"
         return {
-            "ALT": type(data).__name__,
+            "TYPE": type(data).__name__,
             "ARGS": asdict(data),
         }
 
