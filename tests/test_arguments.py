@@ -392,7 +392,7 @@ def test_obj_to_dataclass_matrix_dict_template() -> None:
     data = obj_to_dataclass(cls=list[dict], data=obj)
     assert isinstance_generic(data, list[dict]), f"{data=}"
     assert all(item["msg"] == "Hello" for item in data), f"{data=}"
-    for item, n in zip(data, numbers):
+    for item, n in zip(data, numbers, strict=False):
         assert item["number"] == n, f"{data=}"
 
 
@@ -441,3 +441,12 @@ def test_obj_to_dataclass_literal() -> None:
 
     with pytest.raises(RuntimeError):
         obj_to_dataclass(Literal["Apple", "Banana", "Chocolate"], "Appl")
+
+
+def test_obj_to_dataclass_union_tuple() -> None:
+    obj = [1, 2]
+    data = obj_to_dataclass(tuple[int, int], obj)
+    assert data == (1, 2)
+
+    data = obj_to_dataclass(Union[tuple[int, int], int], obj)
+    assert data == (1, 2)

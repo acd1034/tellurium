@@ -39,22 +39,28 @@ def isinstance_generic(obj, typ: type[_ty.Any]) -> bool:
 
     if origin is _ty.Union:
         return any(isinstance_generic(obj, arg) for arg in args)
-
-    if isinstance(obj, origin):
-        if origin is list:
+    elif origin is _ty.Literal:
+        return any(obj == arg for arg in args)
+    elif origin is dict:
+        if not isinstance(obj, dict):
+            return False
+        return all(
+            isinstance_generic(k, args[0]) and isinstance_generic(v, args[1])
+            for k, v in obj.items()
+        )
+    elif origin is list:
+        if not isinstance(obj, list) and not isinstance(obj, tuple):
+            return False
+        return all(isinstance_generic(x, args[0]) for x in obj)
+    elif origin is tuple:
+        if not isinstance(obj, list) and not isinstance(obj, tuple):
+            return False
+        if len(args) == 2 and args[1] is ...:
             return all(isinstance_generic(x, args[0]) for x in obj)
-        elif origin is dict:
+        elif len(args) == len(obj):
             return all(
-                isinstance_generic(k, args[0]) and isinstance_generic(v, args[1])
-                for k, v in obj.items()
+                isinstance_generic(x, t) for x, t in zip(obj, args, strict=False)
             )
-        elif origin is tuple:
-            if len(args) == 2 and args[1] is ...:
-                return all(isinstance_generic(x, args[0]) for x in obj)
-            elif len(args) == len(obj):
-                return all(
-                    isinstance_generic(x, t) for x, t in zip(obj, args, strict=False)
-                )
 
     return False
 
@@ -64,11 +70,11 @@ def instantiate_generic[T](obj, typ: type[T]) -> T:
     if typ is _ty.Any:
         return obj
 
-    # `typ` が通常の型なら、単純にキャスト
+    # `typ` が通常の型の場合
     if isinstance(typ, type):
         if isinstance(obj, typ):
             return obj
-        return typ(obj)
+        raise TypeError(f"Cannot instantiate {obj} as {typ}")
 
     # `typ` がジェネリック型の場合
     origin = _ty.get_origin(typ)
@@ -80,22 +86,27 @@ def instantiate_generic[T](obj, typ: type[T]) -> T:
             if isinstance_generic(obj, t):
                 return instantiate_generic(obj, t)
         raise TypeError(f"Cannot instantiate {obj} as {typ}")
-
-    if isinstance(obj, origin):
-        if origin is list:
-            return [instantiate_generic(x, args[0]) for x in obj]
-        elif origin is dict:
-            return {
-                instantiate_generic(k, args[0]): instantiate_generic(v, args[1])
-                for k, v in obj.items()
-            }
-        elif origin is tuple:
-            if len(args) == 2 and args[1] is ...:  # tuple[int, ...] の場合
-                return tuple(instantiate_generic(x, args[0]) for x in obj)
-            elif len(args) == len(obj):  # tuple[int, str] などの場合
-                return tuple(
-                    instantiate_generic(x, t) for x, t in zip(obj, args, strict=False)
-                )
+    elif origin is _ty.Literal:
+        if any(obj == arg for arg in args):
+            return obj
+        raise TypeError(f"Cannot instantiate {obj} as {typ}")
+    elif origin is dict:
+        assert isinstance(obj, dict), f"{type(obj)=}"
+        return {
+            instantiate_generic(k, args[0]): instantiate_generic(v, args[1])
+            for k, v in obj.items()
+        }
+    elif origin is list:
+        assert isinstance(obj, list) or isinstance(obj, tuple), f"{type(obj)=}"
+        return [instantiate_generic(x, args[0]) for x in obj]
+    elif origin is tuple:
+        assert isinstance(obj, list) or isinstance(obj, tuple), f"{type(obj)=}"
+        if len(args) == 2 and args[1] is ...:
+            return tuple(instantiate_generic(x, args[0]) for x in obj)
+        elif len(args) == len(obj):
+            return tuple(
+                instantiate_generic(x, t) for x, t in zip(obj, args, strict=False)
+            )
 
     # 変換できない場合はエラー
     raise TypeError(f"Unsupported type: {typ}")
@@ -258,12 +269,12 @@ class _ObjToDataclass:
         if _ty.get_origin(cls) is _ty.Union:
             if isinstance(data, dict) and "ALT" in data:
                 return self.get_union(cls, data, key=key, mapping=mapping)
-            elif any(isinstance_generic(data, ty) for ty in _ty.get_args(cls)):
-                return data
-            else:
-                raise self.run_time_error(
-                    f"expected to contain {'ALT'!r} or be {cls}", data, key
-                )
+            for t in _ty.get_args(cls):
+                if isinstance_generic(data, t):
+                    return instantiate_generic(data, t)
+            raise self.run_time_error(
+                f"expected to contain {'ALT'!r} or be {cls}", data, key
+            )
 
         if _ty.get_origin(cls) is _ty.Literal:
             alternatives = _ty.get_args(cls)
